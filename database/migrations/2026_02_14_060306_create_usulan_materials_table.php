@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('usulan_material', function (Blueprint $table) {
             $table->string('id_usulan_material', 20)->primary();
             $table->string('id_user_pengusul', 20);
+            
             $table->string('nama_material', 150);
             $table->string('satuan', 50);
             $table->text('spesifikasi')->nullable();
