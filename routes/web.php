@@ -6,7 +6,12 @@ use App\Livewire\Admin\Proyek\ProyekIndex;
 use App\Livewire\Admin\Proyek\PenugasanIndex;
 use App\Livewire\Admin\Kategori\KategoriIndex;
 use App\Livewire\Admin\Material\MaterialIndex;
-use App\Livewire\Admin\Supplier\SupplierIndex; // <--- TAMBAHKAN INI
+use App\Livewire\Admin\Supplier\SupplierIndex;
+
+// --- IMPORT UNTUK USULAN MATERIAL ---
+use App\Livewire\TimProyek\UsulanMaterial\UsulanMaterialIndex; 
+use App\Livewire\Admin\UsulanMaterial\UsulanMaterialIndex as AdminUsulanMaterialIndex; // <--- Alias untuk Admin agar tidak bentrok
+
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -51,9 +56,26 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/penugasan', PenugasanIndex::class)->name('penugasan');
 
         // --- LOGISTIK & MATERIAL ---
-        Route::get('/supplier', SupplierIndex::class)->name('supplier'); // <--- Route Baru
+        Route::get('/supplier', SupplierIndex::class)->name('supplier');
         Route::get('/kategori-material', KategoriIndex::class)->name('kategori');    
         Route::get('/material', MaterialIndex::class)->name('material');
+        
+        // REVIEW USULAN MATERIAL (ADMIN)
+        Route::get('/usulan-material', AdminUsulanMaterialIndex::class)->name('usulan-material'); // <--- ROUTE BARU ADMIN
+
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | GROUP ROUTE TIM PROYEK
+    | URL Prefix: /tim-proyek/...
+    | Route Name Prefix: tim-proyek....
+    |--------------------------------------------------------------------------
+    */
+    Route::prefix('tim-proyek')->name('tim-proyek.')->group(function () {
+        
+        // --- LOGISTIK ---
+        Route::get('/usulan-material', UsulanMaterialIndex::class)->name('usulan'); 
 
     });
 });
