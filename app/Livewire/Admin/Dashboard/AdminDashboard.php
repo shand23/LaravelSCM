@@ -8,7 +8,7 @@ class AdminDashboard extends Component
 {
     public function mount()
     {
-        if (auth()->user()->role !== 'Admin') {
+        if (auth()->user()->ROLE !== 'Admin') {
             abort(403);
         }
     }

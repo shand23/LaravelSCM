@@ -12,7 +12,7 @@ class UserIndex extends Component
     use WithPagination; // Gunakan ini agar halaman tidak berat jika user banyak
 
     // Variabel Form
-    public $id_user, $nama_lengkap, $email, $password, $role, $jabatan;
+    public $id_user, $nama_lengkap, $email, $password, $ROLE, $jabatan;
     public $status_user = 'Aktif'; // Default value
     
     // Variabel ID untuk Edit
@@ -28,7 +28,7 @@ class UserIndex extends Component
             'nama_lengkap' => 'required',
             // Perhatikan sintaks unique untuk custom primary key (id_user)
             'email' => 'required|email|unique:users,email,' . $this->user_id_to_edit . ',id_user',
-            'role' => 'required',
+            'ROLE' => 'required',
             'status_user' => 'required|in:Aktif,Nonaktif', // Validasi input harus salah satu dari ini
             'jabatan' => 'nullable',
             'password' => $this->user_id_to_edit ? 'nullable|min:6' : 'required|min:6',
@@ -56,7 +56,7 @@ class UserIndex extends Component
         $this->id_user = $user->id_user; // Primary Key
         $this->nama_lengkap = $user->nama_lengkap;
         $this->email = $user->email;
-        $this->role = $user->role;
+        $this->ROLE = $user->ROLE;
         $this->status_user = $user->status_user; // Load status dari DB
         $this->jabatan = $user->jabatan;
 
@@ -75,7 +75,7 @@ class UserIndex extends Component
         $this->nama_lengkap = '';
         $this->email = '';
         $this->password = '';
-        $this->role = '';
+        $this->ROLE = '';
         $this->status_user = 'Aktif'; // Reset kembali ke Aktif
         $this->jabatan = '';
         $this->user_id_to_edit = null;
@@ -89,7 +89,7 @@ class UserIndex extends Component
         $data = [
             'nama_lengkap' => $this->nama_lengkap,
             'email' => $this->email,
-            'role' => $this->role,
+            'ROLE' => $this->ROLE,
             'status_user' => $this->status_user,
             'jabatan' => $this->jabatan,
         ];
