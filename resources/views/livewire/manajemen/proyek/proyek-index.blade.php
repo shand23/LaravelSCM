@@ -18,26 +18,101 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
             </svg>
             <p>
-                <span class="font-bold">Peringatan!</span> Terdapat <strong>{{ $overdueCount }}</strong> proyek yang sudah melewati tenggat waktu (tanggal selesai) namun statusnya belum diubah menjadi "Selesai".
+                <span class="font-bold">Peringatan!</span> Terdapat <strong>{{ $overdueCount }}</strong> proyek yang sudah melewati tenggat waktu namun belum "Selesai".
             </p>
         </div>
     @endif
+
+    <div class="bg-white p-4 mb-4 rounded-lg shadow-sm border border-gray-100 flex flex-col md:flex-row gap-4 justify-between items-center">
+        
+        <div class="w-full md:w-1/3">
+            <input type="text" wire:model.live.debounce.300ms="search" 
+                   placeholder="Cari ID atau Nama Proyek..." 
+                   class="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm border px-3 py-2">
+        </div>
+
+        <div class="w-full md:w-auto flex space-x-2">
+            <select wire:model.live="filterBulan" class="border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm border px-3 py-2 bg-white">
+                <option value="">Semua Bulan</option>
+                <option value="01">Januari</option>
+                <option value="02">Februari</option>
+                <option value="03">Maret</option>
+                <option value="04">April</option>
+                <option value="05">Mei</option>
+                <option value="06">Juni</option>
+                <option value="07">Juli</option>
+                <option value="08">Agustus</option>
+                <option value="09">September</option>
+                <option value="10">Oktober</option>
+                <option value="11">November</option>
+                <option value="12">Desember</option>
+            </select>
+
+            <select wire:model.live="filterTahun" class="border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm border px-3 py-2 bg-white">
+                <option value="">Semua Tahun</option>
+                @php $currentYear = date('Y'); @endphp
+                @for ($i = $currentYear - 2; $i <= $currentYear + 2; $i++)
+                    <option value="{{ $i }}">{{ $i }}</option>
+                @endfor
+            </select>
+        </div>
+    </div>
 
     <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
         <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
                 <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID Proyek</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Proyek</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lokasi</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jadwal</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th wire:click="sortBy('id_proyek')" class="cursor-pointer hover:bg-gray-100 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider select-none">
+                        <div class="flex items-center space-x-1">
+                            <span>ID Proyek</span>
+                            @if($sortColumn === 'id_proyek')
+                                <span>{!! $sortDirection === 'asc' ? '&#8593;' : '&#8595;' !!}</span>
+                            @endif
+                        </div>
+                    </th>
+                    
+                    <th wire:click="sortBy('nama_proyek')" class="cursor-pointer hover:bg-gray-100 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider select-none">
+                        <div class="flex items-center space-x-1">
+                            <span>Nama Proyek</span>
+                            @if($sortColumn === 'nama_proyek')
+                                <span>{!! $sortDirection === 'asc' ? '&#8593;' : '&#8595;' !!}</span>
+                            @endif
+                        </div>
+                    </th>
+                    
+                    <th wire:click="sortBy('lokasi_proyek')" class="cursor-pointer hover:bg-gray-100 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider select-none">
+                        <div class="flex items-center space-x-1">
+                            <span>Lokasi</span>
+                            @if($sortColumn === 'lokasi_proyek')
+                                <span>{!! $sortDirection === 'asc' ? '&#8593;' : '&#8595;' !!}</span>
+                            @endif
+                        </div>
+                    </th>
+                    
+                    <th wire:click="sortBy('tanggal_mulai')" class="cursor-pointer hover:bg-gray-100 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider select-none">
+                        <div class="flex items-center space-x-1">
+                            <span>Jadwal (Mulai)</span>
+                            @if($sortColumn === 'tanggal_mulai')
+                                <span>{!! $sortDirection === 'asc' ? '&#8593;' : '&#8595;' !!}</span>
+                            @endif
+                        </div>
+                    </th>
+                    
+                    <th wire:click="sortBy('status_proyek')" class="cursor-pointer hover:bg-gray-100 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider select-none">
+                        <div class="flex items-center space-x-1">
+                            <span>Status</span>
+                            @if($sortColumn === 'status_proyek')
+                                <span>{!! $sortDirection === 'asc' ? '&#8593;' : '&#8595;' !!}</span>
+                            @endif
+                        </div>
+                    </th>
+                    
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
                 </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
                 @forelse ($proyeks as $proyek)
-                    <tr>
+                    <tr class="hover:bg-gray-50 transition duration-150">
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                             {{ $proyek->id_proyek }}
                         </td>
@@ -91,7 +166,11 @@
                 @empty
                     <tr>
                         <td colspan="6" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
-                            Belum ada data proyek.
+                            @if($search || $filterBulan || $filterTahun)
+                                Tidak ada proyek yang cocok dengan filter/pencarian Anda.
+                            @else
+                                Belum ada data proyek.
+                            @endif
                         </td>
                     </tr>
                 @endforelse

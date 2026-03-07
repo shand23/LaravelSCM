@@ -11,9 +11,38 @@ class ProyekIndex extends Component
 {
     use WithPagination;
 
+    // Variabel Form
     public $id_proyek, $nama_proyek, $lokasi_proyek, $tanggal_mulai, $tanggal_selesai, $deskripsi_proyek, $status_proyek;
     public $isModalOpen = false;
     public $isEditMode = false;
+
+    // Variabel Pencarian & Filter
+    public $search = '';
+    public $filterBulan = '';
+    public $filterTahun = '';
+
+    // Variabel Sorting
+    public $sortColumn = 'created_at'; // Default kolom urutan
+    public $sortDirection = 'desc'; // Default arah urutan (Terbaru)
+
+    // Reset halaman ke 1 setiap kali user melakukan sesuatu
+    public function updatingSearch() { $this->resetPage(); }
+    public function updatingFilterBulan() { $this->resetPage(); }
+    public function updatingFilterTahun() { $this->resetPage(); }
+
+    // Fungsi untuk mengatur Sorting Kolom
+    public function sortBy($columnName)
+    {
+        if ($this->sortColumn === $columnName) {
+            // Jika kolom yang sama diklik lagi, balikkan arahnya (asc -> desc atau desc -> asc)
+            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            // Jika kolom baru yang diklik, set arah ke asc
+            $this->sortDirection = 'asc';
+            $this->sortColumn = $columnName;
+        }
+        $this->resetPage();
+    }
 
     protected function rules()
     {
@@ -47,7 +76,25 @@ class ProyekIndex extends Component
 
     public function render()
     {
-        $proyeks = Proyek::orderBy('created_at', 'desc')->paginate(10);
+        $query = Proyek::query();
+
+        if ($this->search) {
+            $query->where(function ($q) {
+                $q->where('nama_proyek', 'like', '%' . $this->search . '%')
+                  ->orWhere('id_proyek', 'like', '%' . $this->search . '%');
+            });
+        }
+
+        if ($this->filterBulan) {
+            $query->whereMonth('tanggal_mulai', $this->filterBulan);
+        }
+
+        if ($this->filterTahun) {
+            $query->whereYear('tanggal_mulai', $this->filterTahun);
+        }
+
+        // Terapkan fungsi orderBy sesuai dengan kolom dan arah urutan
+        $proyeks = $query->orderBy($this->sortColumn, $this->sortDirection)->paginate(10);
         
         $overdueCount = Proyek::where('status_proyek', '!=', 'Selesai')
             ->whereNotNull('tanggal_selesai')
@@ -106,7 +153,6 @@ class ProyekIndex extends Component
         $this->isModalOpen = true;
     }
 
-    // Fungsi Baru: Tandai Proyek Selesai dengan Cepat
     public function markAsSelesai($id)
     {
         $proyek = Proyek::findOrFail($id);
