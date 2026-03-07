@@ -1,7 +1,8 @@
 <?php
 
 use App\Http\Controllers\DashboardController; 
-use App\Livewire\Admin\User\UserIndex; // Pastikan ini sesuai dengan nama file Anda
+use App\Livewire\Admin\User\UserIndex;
+use App\Livewire\Manajemen\Proyek\ProyekIndex; // <-- Import komponen Proyek
 use Illuminate\Support\Facades\Route;
 
 // ================= ROOT & AUTH =================
@@ -20,13 +21,19 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Route Profile
     Route::view('/profile', 'profile')->name('profile');
 
-    // ================= GRUP ROUTE ADMIN (Selain Dashboard) =================
+    // ================= GRUP ROUTE ADMIN =================
+    // (Akses: Mengelola User, RBAC, Backup)
     Route::prefix('admin')->name('admin.')->group(function () {
-        // Rute untuk manajemen user tetap pakai Livewire
         Route::get('/users', UserIndex::class)->name('users'); 
     });
 
-    // Nanti rute-rute lain untuk Tim Pengadaan, dll (selain dashboard) bisa ditaruh di sini
+    // ================= GRUP ROUTE TOP MANAJEMEN =================
+    // (Akses: Kelola Proyek, Penugasan, Approval, Laporan)
+    Route::prefix('manajemen')->name('manajemen.')->group(function () {
+        Route::get('/proyek', ProyekIndex::class)->name('proyek'); 
+    });
+
+    // Nanti rute-rute lain untuk Tim Pengadaan, Logistik, dan Pelaksanaan bisa ditaruh di bawah sini
 });
 
 require __DIR__.'/auth.php';
