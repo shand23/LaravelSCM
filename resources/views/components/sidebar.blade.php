@@ -30,12 +30,10 @@
         {{-- ================= ADMIN MENU ================= --}}
         @if(auth()->user()->ROLE === 'Admin')
             
-            {{-- LABEL GROUP: ADMIN --}}
             <div class="mt-6 mb-2 px-4">
                 <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">System</p>
             </div>
             
-            {{-- User Management --}}
             <a href="{{ route('admin.users') }}" 
                class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group mb-1
                {{ request()->routeIs('admin.users') 
@@ -54,7 +52,6 @@
                 <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Manajerial</p>
             </div>
             
-            {{-- Menu Kelola Proyek --}}
             <a href="{{ route('manajemen.proyek') }}" 
                class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group mb-1
                {{ request()->routeIs('manajemen.proyek') 
@@ -64,7 +61,6 @@
                 <span class="font-medium text-sm">Kelola Proyek</span>
             </a>
 
-            {{-- Menu Penugasan Tim (BARU DITAMBAHKAN) --}}
             <a href="{{ route('manajemen.penugasan') }}" 
                class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group mb-1
                {{ request()->routeIs('manajemen.penugasan') 
@@ -88,12 +84,53 @@
                 <span class="font-medium text-sm">Proyek Saya</span>
             </a>
 
+        @endif
+
+        {{-- ================= LOGISTIK MENU ================= --}}
+        @if(auth()->user()->ROLE === 'Logistik')
+            
             <div class="mt-6 mb-2 px-4">
-                <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Logistik</p>
+                <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Logistik & Material</p>
             </div>
+
+            <a href="{{ route('logistik.kategori') }}" 
+               class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group mb-1
+               {{ request()->routeIs('logistik.kategori') 
+                  ? 'bg-purple-600 text-white shadow-lg shadow-purple-900/40 translate-x-1' 
+                  : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
+                <svg class="w-5 h-5 {{ request()->routeIs('logistik.kategori') ? 'text-white' : 'text-gray-500 group-hover:text-purple-400' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path></svg>
+                <span class="font-medium text-sm">Kategori Material</span>
+            </a>
+
+            <a href="{{ route('logistik.material') }}" 
+               class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group mb-1
+               {{ request()->routeIs('logistik.material') 
+                  ? 'bg-purple-600 text-white shadow-lg shadow-purple-900/40 translate-x-1' 
+                  : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
+                <svg class="w-5 h-5 {{ request()->routeIs('logistik.material') ? 'text-white' : 'text-gray-500 group-hover:text-purple-400' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
+                <span class="font-medium text-sm">Data Material</span>
+            </a>
 
         @endif
         
+        {{-- ================= TIM PENGADAAN MENU ================= --}}
+        @if(auth()->user()->ROLE === 'Tim Pengadaan')
+            
+            <div class="mt-6 mb-2 px-4">
+                <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Pengadaan & Pembelian</p>
+            </div>
+
+            <a href="{{ route('pengadaan.supplier') }}" 
+               class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group mb-1
+               {{ request()->routeIs('pengadaan.supplier') 
+                  ? 'bg-purple-600 text-white shadow-lg shadow-purple-900/40 translate-x-1' 
+                  : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
+                <svg class="w-5 h-5 {{ request()->routeIs('pengadaan.supplier') ? 'text-white' : 'text-gray-500 group-hover:text-purple-400' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                <span class="font-medium text-sm">Data Supplier</span>
+            </a>
+
+        @endif
+
     </nav>
 
     {{-- LOGOUT --}}
