@@ -6,7 +6,18 @@ use App\Livewire\Manajemen\Proyek\ProyekIndex;
 use App\Livewire\Manajemen\Penugasan\PenugasanIndex; 
 use App\Livewire\Logistik\Kategori\KategoriIndex; 
 use App\Livewire\Logistik\Material\MaterialIndex;
+use App\Livewire\Pelaksanaan\PermintaanProyek\IndexPermintaan;
 use App\Livewire\Pengadaan\Supplier\SupplierIndex;
+use App\Livewire\Manajemen\Approval\ApprovalIndex;
+
+// Pengajuan Pembelian (PR)
+use App\Livewire\Logistik\PengajuanPembelian\PengajuanIndex as LogistikPengajuanIndex;
+
+// --- IMPORT COMPONENT PENGADAAN (RFQ, KONTRAK & PENGIRIMAN) ---
+use App\Livewire\Pengadaan\Pesanan\PesananIndex;
+use App\Livewire\Pengadaan\Kontrak\KontrakIndex;
+use App\Livewire\Pengadaan\Pengiriman\PengirimanIndex; // <--- Tambahan Baru untuk Pengiriman
+
 use Illuminate\Support\Facades\Route;
 
 // ================= ROOT & AUTH =================
@@ -19,45 +30,49 @@ Route::get('/', function () {
 
 Route::middleware(['auth', 'verified'])->group(function () {
     
-    // ================= DASHBOARD UTAMA (SATU UNTUK SEMUA ROLE) =================
+    // ================= DASHBOARD UTAMA =================
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     
     // Route Profile
     Route::view('/profile', 'profile')->name('profile');
 
     // ================= GRUP ROUTE ADMIN =================
-    // (Akses: Mengelola User, RBAC, System)
     Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/users', UserIndex::class)->name('users'); 
     });
 
     // ================= GRUP ROUTE TOP MANAJEMEN =================
-    // (Akses: Kelola Proyek, Penugasan, Approval, Laporan)
     Route::prefix('manajemen')->name('manajemen.')->group(function () {
         Route::get('/proyek', ProyekIndex::class)->name('proyek'); 
-        Route::get('/penugasan', PenugasanIndex::class)->name('penugasan'); 
+        Route::get('/penugasan', PenugasanIndex::class)->name('penugasan');
     });
 
     // ================= GRUP ROUTE TIM PELAKSANAAN =================
-    // (Akses: Proyek Saya, Laporan Progress Harian, dll)
     Route::prefix('pelaksanaan')->name('pelaksanaan.')->group(function () {
-        // Nanti route untuk modul Tim Pelaksanaan ditambahkan di sini
-        // Route::get('/proyek-saya', ...)->name('proyek_saya');
+        Route::get('/permintaan', IndexPermintaan::class)->name('permintaan');
     });
 
     // ================= GRUP ROUTE LOGISTIK =================
-    // (Akses khusus role Logistik: Master Data Kategori, Material, Inventory, dll)
     Route::prefix('logistik')->name('logistik.')->group(function () {
-        Route::get('/kategori', KategoriIndex::class)->name('kategori'); // Route Master Kategori
+        Route::get('/kategori', KategoriIndex::class)->name('kategori'); 
         Route::get('/material', MaterialIndex::class)->name('material');
-        // Nanti CRUD Material bisa langsung ditambahkan di bawah sini:
-        // Route::get('/material', MaterialIndex::class)->name('material');
+        
+        // Pengajuan Pembelian (PR)
+        Route::get('/pengajuan', LogistikPengajuanIndex::class)->name('pengajuan');
     });
 
     // ================= GRUP ROUTE TIM PENGADAAN =================
-    // (Akses: Kelola Supplier, Purchase Order (PO), dll)
     Route::prefix('pengadaan')->name('pengadaan.')->group(function () {
         Route::get('/supplier', SupplierIndex::class)->name('supplier');
+        
+        // --- PROSES RFQ (REQUEST FOR QUOTATION) ---
+        Route::get('/pesanan', PesananIndex::class)->name('pesanan');
+
+        // --- PROSES KONTRAK & PURCHASE ORDER (PO) ---
+        Route::get('/kontrak', KontrakIndex::class)->name('kontrak');
+
+        // --- PROSES PENGIRIMAN MATERIAL DARI SUPPLIER ---
+        Route::get('/pengiriman', PengirimanIndex::class)->name('pengiriman'); // <--- Route Baru
     });
 
 });
