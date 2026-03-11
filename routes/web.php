@@ -13,10 +13,13 @@ use App\Livewire\Manajemen\Approval\ApprovalIndex;
 // Pengajuan Pembelian (PR)
 use App\Livewire\Logistik\PengajuanPembelian\PengajuanIndex as LogistikPengajuanIndex;
 
+// --- IMPORT COMPONENT PENERIMAAN (BARU) ---
+use App\Livewire\Logistik\Penerimaan\PenerimaanIndex; 
+
 // --- IMPORT COMPONENT PENGADAAN (RFQ, KONTRAK & PENGIRIMAN) ---
 use App\Livewire\Pengadaan\Pesanan\PesananIndex;
 use App\Livewire\Pengadaan\Kontrak\KontrakIndex;
-use App\Livewire\Pengadaan\Pengiriman\PengirimanIndex; // <--- Tambahan Baru untuk Pengiriman
+use App\Livewire\Pengadaan\Pengiriman\PengirimanIndex; 
 
 use Illuminate\Support\Facades\Route;
 
@@ -59,6 +62,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         
         // Pengajuan Pembelian (PR)
         Route::get('/pengajuan', LogistikPengajuanIndex::class)->name('pengajuan');
+
+        // --- PROSES PENERIMAAN MATERIAL (RECEIVING) ---
+        Route::get('/penerimaan', PenerimaanIndex::class)->name('penerimaan'); // <--- Tambahan Baru
     });
 
     // ================= GRUP ROUTE TIM PENGADAAN =================
@@ -72,7 +78,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/kontrak', KontrakIndex::class)->name('kontrak');
 
         // --- PROSES PENGIRIMAN MATERIAL DARI SUPPLIER ---
-        Route::get('/pengiriman', PengirimanIndex::class)->name('pengiriman'); // <--- Route Baru
+        Route::get('/pengiriman', PengirimanIndex::class)->name('pengiriman'); 
     });
 
 });

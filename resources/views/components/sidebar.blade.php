@@ -96,46 +96,56 @@
 
         @endif
 
-        {{-- ================= LOGISTIK MENU ================= --}}
-        @if(auth()->user()->ROLE === 'Logistik')
-            
-            <div class="mt-6 mb-2 px-4">
-                <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Logistik & Material</p>
-            </div>
+       {{-- ================= LOGISTIK MENU ================= --}}
+            @if(auth()->user()->ROLE === 'Logistik')
+                
+                <div class="mt-6 mb-2 px-4">
+                    <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Logistik & Material</p>
+                </div>
 
-            <a href="{{ route('logistik.kategori') }}" 
-               class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group mb-1
-               {{ request()->routeIs('logistik.kategori') 
-                  ? 'bg-purple-600 text-white shadow-lg shadow-purple-900/40 translate-x-1' 
-                  : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
-                <svg class="w-5 h-5 {{ request()->routeIs('logistik.kategori') ? 'text-white' : 'text-gray-500 group-hover:text-purple-400' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path></svg>
-                <span class="font-medium text-sm">Kategori Material</span>
-            </a>
+                <a href="{{ route('logistik.kategori') }}" 
+                   class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group mb-1
+                   {{ request()->routeIs('logistik.kategori') 
+                      ? 'bg-purple-600 text-white shadow-lg shadow-purple-900/40 translate-x-1' 
+                      : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
+                    <svg class="w-5 h-5 {{ request()->routeIs('logistik.kategori') ? 'text-white' : 'text-gray-500 group-hover:text-purple-400' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path></svg>
+                    <span class="font-medium text-sm">Kategori Material</span>
+                </a>
 
-            <a href="{{ route('logistik.material') }}" 
-               class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group mb-1
-               {{ request()->routeIs('logistik.material') 
-                  ? 'bg-purple-600 text-white shadow-lg shadow-purple-900/40 translate-x-1' 
-                  : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
-                <svg class="w-5 h-5 {{ request()->routeIs('logistik.material') ? 'text-white' : 'text-gray-500 group-hover:text-purple-400' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
-                <span class="font-medium text-sm">Data Material</span>
-            </a>
+                <a href="{{ route('logistik.material') }}" 
+                   class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group mb-1
+                   {{ request()->routeIs('logistik.material') 
+                      ? 'bg-purple-600 text-white shadow-lg shadow-purple-900/40 translate-x-1' 
+                      : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
+                    <svg class="w-5 h-5 {{ request()->routeIs('logistik.material') ? 'text-white' : 'text-gray-500 group-hover:text-purple-400' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
+                    <span class="font-medium text-sm">Data Material</span>
+                </a>
 
-            {{-- --- TRANSAKSI BARANG --- --}}
-            <div class="mt-4 mb-2 px-4">
-                <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Transaksi Barang</p>
-            </div>
+                {{-- --- TRANSAKSI BARANG --- --}}
+                <div class="mt-4 mb-2 px-4">
+                    <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Transaksi Barang</p>
+                </div>
 
-            <a href="{{ route('logistik.pengajuan') }}" 
-               class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group mb-1
-               {{ request()->routeIs('logistik.pengajuan') 
-                  ? 'bg-purple-600 text-white shadow-lg shadow-purple-900/40 translate-x-1' 
-                  : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
-                <svg class="w-5 h-5 {{ request()->routeIs('logistik.pengajuan') ? 'text-white' : 'text-gray-500 group-hover:text-purple-400' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                <span class="font-medium text-sm">Pengajuan PR</span>
-            </a>
+                <a href="{{ route('logistik.pengajuan') }}" 
+                   class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group mb-1
+                   {{ request()->routeIs('logistik.pengajuan') 
+                      ? 'bg-purple-600 text-white shadow-lg shadow-purple-900/40 translate-x-1' 
+                      : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
+                    <svg class="w-5 h-5 {{ request()->routeIs('logistik.pengajuan') ? 'text-white' : 'text-gray-500 group-hover:text-purple-400' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    <span class="font-medium text-sm">Pengajuan PR</span>
+                </a>
 
-        @endif
+                {{-- --- TAMBAHAN BARU: PENERIMAAN GUDANG --- --}}
+                <a href="{{ route('logistik.penerimaan') }}" 
+                   class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group mb-1
+                   {{ request()->routeIs('logistik.penerimaan') 
+                      ? 'bg-purple-600 text-white shadow-lg shadow-purple-900/40 translate-x-1' 
+                      : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
+                    <svg class="w-5 h-5 {{ request()->routeIs('logistik.penerimaan') ? 'text-white' : 'text-gray-500 group-hover:text-purple-400' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+                    <span class="font-medium text-sm">Penerimaan Gudang</span>
+                </a>
+
+            @endif
         
        {{-- ================= TIM PENGADAAN MENU ================= --}}
 @if(auth()->user()->ROLE === 'Tim Pengadaan')

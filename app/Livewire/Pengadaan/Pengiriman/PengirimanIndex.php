@@ -6,9 +6,10 @@ use Livewire\Component;
 use Livewire\WithPagination;
 use Livewire\Attributes\Layout;
 use App\Models\Pengiriman;
+use App\Models\PengirimanDetail;
 use App\Models\Kontrak;
 use Illuminate\Support\Facades\Auth;
-use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 #[Layout('layouts.app')]
 class PengirimanIndex extends Component
@@ -17,177 +18,365 @@ class PengirimanIndex extends Component
 
     public $search = '';
     public $isModalOpen = false;
-    public $isEditMode = false;
-    public $selected_id;
-
-    // Form Fields
-    public $id_kontrak;
-    public $tanggal_berangkat;
-    public $estimasi_tanggal_tiba;
-    public $nama_supir;
-    public $plat_kendaraan;
     
-    // Properti untuk batas minimal tanggal (Frontend Validation)
+    public $edit_id = null; // Menyimpan ID jika sedang mode edit
+    public $id_do_retur = null; // Menyimpan ID DO lama jika sedang proses retur
+    public $id_kontrak;
+    public $tipe_pengiriman = 'Sekaligus'; 
+    public $listMaterialPO = []; 
+    public $jadwals = []; 
     public $min_tanggal_berangkat;
 
-    // Hook: Berjalan otomatis setiap kali dropdown "Pilih PO (Kontrak)" berubah
     public function updatedIdKontrak($value)
     {
-        if ($value) {
-            $kontrak = Kontrak::find($value);
-            // Batas minimal tanggal berangkat adalah tanggal kontrak disepakati
+        $this->loadDataPO($value);
+    }
+
+    public function updatedTipePengiriman()
+    {
+        $this->loadDataPO($this->id_kontrak);
+    }
+
+    private function loadDataPO($id_kontrak)
+    {
+        $this->jadwals = []; 
+        $this->listMaterialPO = []; 
+
+        if ($id_kontrak) {
+            $kontrak = Kontrak::with('detailKontrak.material')->find($id_kontrak);
             $this->min_tanggal_berangkat = $kontrak ? $kontrak->tanggal_kontrak : null;
-            
-            // Jika tgl berangkat yang sudah terisi ternyata sebelum tgl kontrak, reset ke tgl kontrak
-            if ($this->tanggal_berangkat && $this->tanggal_berangkat < $this->min_tanggal_berangkat) {
-                $this->tanggal_berangkat = $this->min_tanggal_berangkat;
+
+            if ($kontrak && $kontrak->detailKontrak) {
+                foreach ($kontrak->detailKontrak as $detail) {
+                    $idReal = $detail->id_detail_kontrak; 
+                    if (!$idReal) continue;
+
+                    // 1. Hitung barang yang sudah dikirim (Abaikan DO yang sedang diedit)
+                    $sudahDikirimQuery = PengirimanDetail::whereHas('pengiriman', function($q) use ($id_kontrak) {
+                        $q->where('id_kontrak', $id_kontrak);
+                    })->where('id_detail_kontrak', $idReal);
+
+                    if ($this->edit_id) {
+                        $sudahDikirimQuery->where('id_pengiriman', '!=', $this->edit_id);
+                    }
+                    $sudahDikirim = $sudahDikirimQuery->sum('jumlah_dikirim');
+
+                    // 2. Hitung barang yang RUSAK / DIRETUR dari penerimaan
+                    // Tabel Disesuaikan tanpa 's'
+                    $jumlahRusak = DB::table('detail_penerimaan')
+                        ->join('penerimaan_material', 'detail_penerimaan.id_penerimaan', '=', 'penerimaan_material.id_penerimaan')
+                        ->join('pengiriman', 'penerimaan_material.id_pengiriman', '=', 'pengiriman.id_pengiriman')
+                        ->where('pengiriman.id_kontrak', $id_kontrak)
+                        ->where('detail_penerimaan.id_detail_kontrak', $idReal)
+                        ->sum('detail_penerimaan.jumlah_rusak');
+
+                    // 3. Kalkulasi Sisa Sebenarnya
+                    $sisaKebutuhan = $detail->jumlah_final - ($sudahDikirim - $jumlahRusak);
+
+                    $this->listMaterialPO[$idReal] = [
+                        'id_detail_kontrak' => $idReal,
+                        'nama_material' => $detail->material->nama_material ?? 'Material Unknown',
+                        'sisa_kebutuhan' => $sisaKebutuhan > 0 ? $sisaKebutuhan : 0,
+                    ];
+                }
+                
+                // Jika bukan mode edit & bukan mode retur, langsung buat form kosong
+                if (!$this->edit_id && !$this->id_do_retur) {
+                    $this->addJadwal();
+                }
             }
-            // Update juga estimasi tiba agar tidak membingungkan
-            if ($this->estimasi_tanggal_tiba && $this->estimasi_tanggal_tiba < $this->tanggal_berangkat) {
-                $this->estimasi_tanggal_tiba = $this->tanggal_berangkat;
-            }
-        } else {
-            $this->min_tanggal_berangkat = null;
         }
     }
 
-    // Hook: Berjalan otomatis saat tanggal berangkat diubah manual oleh user
-    public function updatedTanggalBerangkat($value)
+    public function addJadwal()
     {
-        if ($this->estimasi_tanggal_tiba && $this->estimasi_tanggal_tiba < $value) {
-            $this->estimasi_tanggal_tiba = $value;
+        $details = [];
+        
+        if ($this->tipe_pengiriman == 'Sekaligus') {
+            foreach ($this->listMaterialPO as $id => $item) {
+                if ($item['sisa_kebutuhan'] > 0) {
+                    $details[] = ['id_detail_kontrak' => $id, 'qty' => $item['sisa_kebutuhan']];
+                }
+            }
+        } else {
+            $details[] = ['id_detail_kontrak' => '', 'qty' => 0];
         }
+
+        $this->jadwals[] = [
+            'tanggal_berangkat' => date('Y-m-d'),
+            'estimasi_tanggal_tiba' => date('Y-m-d', strtotime('+1 day')),
+            'keterangan' => $this->tipe_pengiriman == 'Retur' ? '[RETUR]' : '',
+            'details' => count($details) > 0 ? $details : [['id_detail_kontrak' => '', 'qty' => 0]]
+        ];
+    }
+
+    public function removeJadwal($index)
+    {
+        unset($this->jadwals[$index]);
+        $this->jadwals = array_values($this->jadwals); 
+    }
+
+    public function addMaterialToJadwal($jadwalIndex)
+    {
+        $this->jadwals[$jadwalIndex]['details'][] = ['id_detail_kontrak' => '', 'qty' => 0];
+    }
+
+    public function removeMaterialFromJadwal($jadwalIndex, $detailIndex)
+    {
+        unset($this->jadwals[$jadwalIndex]['details'][$detailIndex]);
+        $this->jadwals[$jadwalIndex]['details'] = array_values($this->jadwals[$jadwalIndex]['details']);
     }
 
     public function create()
     {
         $this->resetForm();
-        $this->isEditMode = false;
         $this->isModalOpen = true;
     }
 
-    public function edit($id)
+    public function prosesRetur($id_pengiriman)
     {
-        $pengiriman = Pengiriman::findOrFail($id);
-        $this->selected_id = $id;
-        $this->id_kontrak = $pengiriman->id_kontrak;
-        $this->tanggal_berangkat = $pengiriman->tanggal_berangkat;
-        $this->estimasi_tanggal_tiba = $pengiriman->estimasi_tanggal_tiba;
-        $this->nama_supir = $pengiriman->nama_supir;
-        $this->plat_kendaraan = $pengiriman->plat_kendaraan;
+        $this->resetForm();
+        $doRetur = Pengiriman::find($id_pengiriman);
+        
+        if (!$doRetur) return;
 
-        // Trigger update min date untuk form edit
-        $this->updatedIdKontrak($this->id_kontrak);
+        $this->id_do_retur = $id_pengiriman; 
+        $this->id_kontrak = $doRetur->id_kontrak;
+        $this->tipe_pengiriman = 'Retur';
+        
+        $this->loadDataPO($this->id_kontrak);
 
-        $this->isEditMode = true;
+        // Cari tahu detail barang apa saja yang rusak pada DO ini
+        // Tabel Disesuaikan tanpa 's'
+        $barangRusak = DB::table('detail_penerimaan')
+            ->join('penerimaan_material', 'detail_penerimaan.id_penerimaan', '=', 'penerimaan_material.id_penerimaan')
+            ->where('penerimaan_material.id_pengiriman', $id_pengiriman)
+            ->where('detail_penerimaan.jumlah_rusak', '>', 0)
+            ->select('detail_penerimaan.id_detail_kontrak', 'detail_penerimaan.jumlah_rusak')
+            ->get();
+
+        $details = [];
+        foreach ($barangRusak as $br) {
+            $details[] = [
+                'id_detail_kontrak' => $br->id_detail_kontrak,
+                'qty' => $br->jumlah_rusak
+            ];
+        }
+
+        $this->jadwals = [[
+            'tanggal_berangkat' => date('Y-m-d'),
+            'estimasi_tanggal_tiba' => date('Y-m-d', strtotime('+1 day')),
+            'keterangan' => 'Penggantian Retur dari DO: ' . $id_pengiriman,
+            'details' => count($details) > 0 ? $details : [['id_detail_kontrak' => '', 'qty' => 0]]
+        ]];
+
         $this->isModalOpen = true;
+    }
+
+    public function editDO($id)
+    {
+        $this->resetForm();
+        $this->edit_id = $id;
+        
+        $do = Pengiriman::with('detailPengiriman')->find($id);
+        if (!$do || $do->status_pengiriman != 'Pending') return;
+
+        $this->id_kontrak = $do->id_kontrak;
+        $this->tipe_pengiriman = 'Bertahap';
+        
+        $this->loadDataPO($do->id_kontrak);
+
+        $details = [];
+        foreach ($do->detailPengiriman as $det) {
+            $details[] = [
+                'id_detail_kontrak' => $det->id_detail_kontrak,
+                'qty' => $det->jumlah_dikirim
+            ];
+        }
+
+        $this->jadwals = [[
+            'tanggal_berangkat' => \Carbon\Carbon::parse($do->tanggal_berangkat)->format('Y-m-d'),
+            'estimasi_tanggal_tiba' => \Carbon\Carbon::parse($do->estimasi_tanggal_tiba)->format('Y-m-d'),
+            'keterangan' => $do->keterangan,
+            'details' => $details
+        ]];
+
+        $this->isModalOpen = true;
+    }
+
+    public function kirimDO($id)
+    {
+        $do = Pengiriman::find($id);
+        if ($do && $do->status_pengiriman == 'Pending') {
+            $do->update(['status_pengiriman' => 'Dalam Perjalanan']);
+            session()->flash('message', "DO {$id} berhasil dikirim (Status: Dalam Perjalanan).");
+        }
+    }
+
+    public function deleteDO($id)
+    {
+        $do = Pengiriman::find($id);
+        if ($do && $do->status_pengiriman == 'Pending') {
+            $do->delete();
+            session()->flash('message', "DO {$id} berhasil dihapus.");
+        }
     }
 
     public function store()
     {
-        $this->validateData();
-
-        Pengiriman::create([
-            'id_kontrak' => $this->id_kontrak,
-            'id_user_pengadaan' => Auth::id() ?? 'USR0001', // Sesuaikan ID default ini
-            'tanggal_berangkat' => $this->tanggal_berangkat,
-            'estimasi_tanggal_tiba' => $this->estimasi_tanggal_tiba,
-            'nama_supir' => $this->nama_supir,
-            'plat_kendaraan' => $this->plat_kendaraan,
-            'status_pengiriman' => 'Pending',
-        ]);
-
-        session()->flash('message', 'Jadwal Pengiriman Berhasil Dibuat!');
-        $this->closeModal();
-    }
-
-    public function update()
-    {
-        $this->validateData();
-
-        $pengiriman = Pengiriman::findOrFail($this->selected_id);
-        $pengiriman->update([
-            'id_kontrak' => $this->id_kontrak,
-            'tanggal_berangkat' => $this->tanggal_berangkat,
-            'estimasi_tanggal_tiba' => $this->estimasi_tanggal_tiba,
-            'nama_supir' => $this->nama_supir,
-            'plat_kendaraan' => $this->plat_kendaraan,
-        ]);
-
-        session()->flash('message', 'Data Pengiriman Berhasil Diperbarui!');
-        $this->closeModal();
-    }
-
-    public function delete($id)
-    {
-        $pengiriman = Pengiriman::findOrFail($id);
-        $pengiriman->delete();
-        session()->flash('message', 'Data Pengiriman Berhasil Dihapus!');
-    }
-
-    public function markAsInTransit($id)
-    {
-        // 1. Cari data pengirimannya
-        $pengiriman = Pengiriman::findOrFail($id);
-        
-        // 2. Update status pengiriman di tabel pengiriman menjadi 'Dalam Perjalanan'
-        $pengiriman->update(['status_pengiriman' => 'Dalam Perjalanan']);
-
-        // 3. Update kolom status_pengiriman di tabel Kontrak menjadi 'Pengiriman' (PERBAIKAN DI SINI)
-        if ($pengiriman->kontrak) {
-            $pengiriman->kontrak->update([
-                'status_pengiriman' => 'Pengiriman'
-            ]);
-        }
-
-        // 4. Berikan notifikasi sukses ganda
-        session()->flash('message', 'Truk Dalam Perjalanan & Status Pengiriman di PO otomatis diupdate!');
-    }
-
-    private function validateData()
-    {
-        // Ambil data kontrak untuk validasi backend (mencegah bypass)
-        $kontrak = Kontrak::find($this->id_kontrak);
-        $tgl_kontrak = $kontrak ? $kontrak->tanggal_kontrak : null;
-
         $this->validate([
             'id_kontrak' => 'required',
-            'tanggal_berangkat' => 'required|date' . ($tgl_kontrak ? '|after_or_equal:' . $tgl_kontrak : ''),
-            'estimasi_tanggal_tiba' => 'required|date|after_or_equal:tanggal_berangkat',
-            'nama_supir' => 'nullable|string|max:100',
-            'plat_kendaraan' => 'nullable|string|max:20',
+            'jadwals.*.tanggal_berangkat' => 'required|date',
+            'jadwals.*.estimasi_tanggal_tiba' => 'required|date',
+            'jadwals.*.details.*.qty' => 'required|numeric|min:0', 
         ], [
-            'id_kontrak.required' => 'PO (Kontrak) harus dipilih.',
-            'tanggal_berangkat.after_or_equal' => 'Tgl Berangkat tidak boleh sebelum Tgl Kontrak (' . ($tgl_kontrak ? Carbon::parse($tgl_kontrak)->format('d M Y') : '-') . ').',
-            'estimasi_tanggal_tiba.after_or_equal' => 'Estimasi Tiba tidak boleh sebelum Tgl Berangkat.',
+            'jadwals.*.details.*.qty.min' => 'Jumlah material tidak boleh bernilai minus (-).'
         ]);
+
+        foreach ($this->jadwals as $index => $jadwal) {
+            if (strtotime($jadwal['estimasi_tanggal_tiba']) < strtotime($jadwal['tanggal_berangkat'])) {
+                session()->flash('error', "Estimasi tiba tidak boleh sebelum tanggal berangkat!");
+                return;
+            }
+        }
+
+        $totalKirimPerMaterial = [];
+        foreach ($this->jadwals as $j) {
+            foreach ($j['details'] as $det) {
+                if (!empty($det['id_detail_kontrak'])) {
+                    $id = $det['id_detail_kontrak'];
+                    $totalKirimPerMaterial[$id] = ($totalKirimPerMaterial[$id] ?? 0) + (float) $det['qty'];
+                }
+            }
+        }
+
+        foreach ($totalKirimPerMaterial as $idDet => $total) {
+            $sisa = $this->listMaterialPO[$idDet]['sisa_kebutuhan'] ?? 0;
+            if ($total > $sisa) {
+                $namaMat = $this->listMaterialPO[$idDet]['nama_material'] ?? 'Unknown';
+                session()->flash('error', "Total kirim {$namaMat} melebihi sisa PO! (Maksimal: {$sisa})");
+                return;
+            }
+        }
+
+        DB::transaction(function () {
+            if ($this->edit_id) {
+                $jadwal = $this->jadwals[0];
+                $do = Pengiriman::find($this->edit_id);
+                
+                $do->update([
+                    'tanggal_berangkat' => $jadwal['tanggal_berangkat'],
+                    'estimasi_tanggal_tiba' => $jadwal['estimasi_tanggal_tiba'],
+                    'keterangan' => $jadwal['keterangan'],
+                ]);
+
+                PengirimanDetail::where('id_pengiriman', $this->edit_id)->delete();
+                
+                foreach ($jadwal['details'] as $det) {
+                    if (!empty($det['id_detail_kontrak']) && $det['qty'] > 0) {
+                        PengirimanDetail::create([
+                            'id_pengiriman' => $do->id_pengiriman,
+                            'id_detail_kontrak' => $det['id_detail_kontrak'], 
+                            'jumlah_dikirim' => $det['qty'],
+                        ]);
+                    }
+                }
+            } else {
+                foreach ($this->jadwals as $jadwal) {
+                    $hasItems = false;
+                    foreach ($jadwal['details'] as $det) {
+                        if (!empty($det['id_detail_kontrak']) && $det['qty'] > 0) $hasItems = true;
+                    }
+
+                    if ($hasItems) {
+                        $pengiriman = Pengiriman::create([
+                            'id_kontrak' => $this->id_kontrak,
+                            'id_user_pengadaan' => Auth::id() ?? 1,
+                            'tanggal_berangkat' => $jadwal['tanggal_berangkat'],
+                            'estimasi_tanggal_tiba' => $jadwal['estimasi_tanggal_tiba'],
+                            'keterangan' => $jadwal['keterangan'],
+                            'status_pengiriman' => 'Pending',
+                        ]);
+
+                        foreach ($jadwal['details'] as $det) {
+                            if (!empty($det['id_detail_kontrak']) && $det['qty'] > 0) {
+                                PengirimanDetail::create([
+                                    'id_pengiriman' => $pengiriman->id_pengiriman,
+                                    'id_detail_kontrak' => $det['id_detail_kontrak'], 
+                                    'jumlah_dikirim' => $det['qty'],
+                                ]);
+                            }
+                        }
+                    }
+                }
+
+                if ($this->id_do_retur) {
+                    $doLama = Pengiriman::find($this->id_do_retur);
+                    if ($doLama) {
+                        $doLama->update(['status_pengiriman' => 'Selesai']);
+                    }
+                }
+            }
+        });
+
+        session()->flash('message', $this->edit_id ? 'DO Berhasil Diperbarui!' : 'DO Berhasil Disimpan!');
+        $this->closeModal();
     }
 
-    private function resetForm()
-    {
-        $this->reset(['id_kontrak', 'tanggal_berangkat', 'estimasi_tanggal_tiba', 'nama_supir', 'plat_kendaraan', 'selected_id', 'min_tanggal_berangkat']);
-        $this->tanggal_berangkat = date('Y-m-d');
-        $this->estimasi_tanggal_tiba = date('Y-m-d', strtotime('+1 day'));
-    }
+    public function closeModal() { $this->isModalOpen = false; }
 
-    public function closeModal()
-    {
-        $this->isModalOpen = false;
-        $this->resetValidation();
+    private function resetForm() {
+        $this->reset(['id_kontrak', 'tipe_pengiriman', 'listMaterialPO', 'jadwals', 'edit_id', 'id_do_retur']);
+        $this->tipe_pengiriman = 'Sekaligus';
     }
 
     public function render()
     {
+        $rawKontrak = Kontrak::whereIn('status_kontrak', ['Disepakati', 'Pengiriman', 'Dikirim Sebagian'])
+            ->with('detailKontrak')
+            ->get();
+        
+        $listKontrakValid = [];
+        
+        foreach ($rawKontrak as $kontrak) {
+            if ($this->id_kontrak == $kontrak->id_kontrak) {
+                $listKontrakValid[] = $kontrak;
+                continue;
+            }
+
+            $adaSisa = false;
+            foreach ($kontrak->detailKontrak as $detail) {
+                $sudahDikirim = PengirimanDetail::whereHas('pengiriman', function($q) use ($kontrak) {
+                    $q->where('id_kontrak', $kontrak->id_kontrak);
+                })->where('id_detail_kontrak', $detail->id_detail_kontrak)->sum('jumlah_dikirim');
+
+                // Tabel Disesuaikan tanpa 's'
+                $jumlahRusak = DB::table('detail_penerimaan')
+                    ->join('penerimaan_material', 'detail_penerimaan.id_penerimaan', '=', 'penerimaan_material.id_penerimaan')
+                    ->join('pengiriman', 'penerimaan_material.id_pengiriman', '=', 'pengiriman.id_pengiriman')
+                    ->where('pengiriman.id_kontrak', $kontrak->id_kontrak)
+                    ->where('detail_penerimaan.id_detail_kontrak', $detail->id_detail_kontrak)
+                    ->sum('detail_penerimaan.jumlah_rusak');
+
+                $sisaKebutuhan = $detail->jumlah_final - ($sudahDikirim - $jumlahRusak);
+                
+                if ($sisaKebutuhan > 0) {
+                    $adaSisa = true;
+                    break; 
+                }
+            }
+
+            if ($adaSisa) {
+                $listKontrakValid[] = $kontrak;
+            }
+        }
+
         return view('livewire.pengadaan.pengiriman.pengiriman-index', [
-            'listPengiriman' => Pengiriman::with(['kontrak', 'userPengadaan'])
-                ->where('id_pengiriman', 'like', "%{$this->search}%")
-                ->orWhereHas('kontrak', function($q) {
-                    $q->where('nomor_kontrak', 'like', "%{$this->search}%");
-                })
+            'listPengiriman' => Pengiriman::with(['kontrak', 'detailPengiriman.detailKontrak.material'])
                 ->orderBy('created_at', 'desc')
+                ->where('id_pengiriman', 'like', "%{$this->search}%")
                 ->paginate(10),
-            // Hanya ambil PO yang status_kontrak-nya Disepakati
-            'listKontrak' => Kontrak::where('status_kontrak', 'Disepakati')->orderBy('created_at', 'desc')->get()
+            'listKontrak' => collect($listKontrakValid) 
         ]);
     }
 }

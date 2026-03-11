@@ -15,9 +15,10 @@ class Pengiriman extends Model
     public $incrementing = false;
     protected $keyType = 'string';
 
+    // Saya tambahkan 'keterangan' agar tidak error saat create dari Livewire
     protected $fillable = [
         'id_pengiriman', 'id_kontrak', 'id_user_pengadaan', 'tanggal_berangkat',
-        'estimasi_tanggal_tiba', 'nama_supir', 'plat_kendaraan', 'status_pengiriman'
+        'estimasi_tanggal_tiba', 'status_pengiriman', 'keterangan'
     ];
 
     // ==========================================
@@ -40,7 +41,28 @@ class Pengiriman extends Model
         });
     }
 
-    public function kontrak() { return $this->belongsTo(Kontrak::class, 'id_kontrak', 'id_kontrak'); }
-    public function userPengadaan() { return $this->belongsTo(User::class, 'id_user_pengadaan', 'id_user'); }
-    public function penerimaan() { return $this->hasMany(PenerimaanMaterial::class, 'id_pengiriman', 'id_pengiriman'); }
+    // ==========================================
+    // RELATIONS
+    // ==========================================
+
+    // ✅ INI RELASI YANG MENYELESAIKAN ERROR ANDA
+    public function detailPengiriman() 
+    { 
+        return $this->hasMany(PengirimanDetail::class, 'id_pengiriman', 'id_pengiriman'); 
+    }
+
+    public function kontrak() 
+    { 
+        return $this->belongsTo(Kontrak::class, 'id_kontrak', 'id_kontrak'); 
+    }
+    
+    public function userPengadaan() 
+    { 
+        return $this->belongsTo(User::class, 'id_user_pengadaan', 'id_user'); 
+    }
+    
+    public function penerimaan() 
+    { 
+        return $this->hasMany(PenerimaanMaterial::class, 'id_pengiriman', 'id_pengiriman'); 
+    }
 }
