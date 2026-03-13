@@ -10,6 +10,7 @@ use App\Models\PengirimanDetail;
 use App\Models\Kontrak;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Barryvdh\DomPDF\Facade\Pdf; // <-- IMPORT PDF DOMPDF
 
 #[Layout('layouts.app')]
 class PengirimanIndex extends Component
@@ -19,8 +20,14 @@ class PengirimanIndex extends Component
     public $search = '';
     public $isModalOpen = false;
     
-    public $edit_id = null; // Menyimpan ID jika sedang mode edit
-    public $id_do_retur = null; // Menyimpan ID DO lama jika sedang proses retur
+    // --- State Baru untuk Fitur Detail Retur / Bukti Rusak ---
+    public $isModalDetailReturOpen = false;
+    public $dataDetailRetur = [];
+    public $infoDORetur = null;
+    // ---------------------------------------------------------
+
+    public $edit_id = null; 
+    public $id_do_retur = null; 
     public $id_kontrak;
     public $tipe_pengiriman = 'Sekaligus'; 
     public $listMaterialPO = []; 
@@ -51,7 +58,6 @@ class PengirimanIndex extends Component
                     $idReal = $detail->id_detail_kontrak; 
                     if (!$idReal) continue;
 
-                    // 1. Hitung barang yang sudah dikirim (Abaikan DO yang sedang diedit)
                     $sudahDikirimQuery = PengirimanDetail::whereHas('pengiriman', function($q) use ($id_kontrak) {
                         $q->where('id_kontrak', $id_kontrak);
                     })->where('id_detail_kontrak', $idReal);
@@ -61,8 +67,6 @@ class PengirimanIndex extends Component
                     }
                     $sudahDikirim = $sudahDikirimQuery->sum('jumlah_dikirim');
 
-                    // 2. Hitung barang yang RUSAK / DIRETUR dari penerimaan
-                    // Tabel Disesuaikan tanpa 's'
                     $jumlahRusak = DB::table('detail_penerimaan')
                         ->join('penerimaan_material', 'detail_penerimaan.id_penerimaan', '=', 'penerimaan_material.id_penerimaan')
                         ->join('pengiriman', 'penerimaan_material.id_pengiriman', '=', 'pengiriman.id_pengiriman')
@@ -70,7 +74,6 @@ class PengirimanIndex extends Component
                         ->where('detail_penerimaan.id_detail_kontrak', $idReal)
                         ->sum('detail_penerimaan.jumlah_rusak');
 
-                    // 3. Kalkulasi Sisa Sebenarnya
                     $sisaKebutuhan = $detail->jumlah_final - ($sudahDikirim - $jumlahRusak);
 
                     $this->listMaterialPO[$idReal] = [
@@ -80,7 +83,6 @@ class PengirimanIndex extends Component
                     ];
                 }
                 
-                // Jika bukan mode edit & bukan mode retur, langsung buat form kosong
                 if (!$this->edit_id && !$this->id_do_retur) {
                     $this->addJadwal();
                 }
@@ -133,6 +135,74 @@ class PengirimanIndex extends Component
         $this->isModalOpen = true;
     }
 
+    // --- FUNGSI BARU: LIHAT DETAIL RETUR (BUKTI RUSAK) ---
+    public function lihatDetailRetur($id_pengiriman)
+    {
+        $this->infoDORetur = Pengiriman::find($id_pengiriman);
+
+        $this->dataDetailRetur = DB::table('detail_penerimaan')
+            ->join('penerimaan_material', 'detail_penerimaan.id_penerimaan', '=', 'penerimaan_material.id_penerimaan')
+            ->join('detail_kontrak', 'detail_penerimaan.id_detail_kontrak', '=', 'detail_kontrak.id_detail_kontrak')
+            ->join('material', 'detail_kontrak.id_material', '=', 'material.id_material') 
+            ->where('penerimaan_material.id_pengiriman', $id_pengiriman)
+            ->where('detail_penerimaan.jumlah_rusak', '>', 0)
+            ->select(
+                'material.nama_material',
+                'detail_penerimaan.jumlah_rusak',
+                'detail_penerimaan.alasan_return', 
+                'detail_penerimaan.foto_bukti_rusak' 
+            )
+            ->get();
+
+        $this->isModalDetailReturOpen = true;
+    }
+
+    // --- FUNGSI UPDATE: CETAK BUKTI RETUR (PDF) ---
+    public function cetakBuktiRetur($id_pengiriman)
+    {
+        // 1. Ambil data Pengiriman (DO)
+        $doRetur = Pengiriman::with('kontrak')->findOrFail($id_pengiriman);
+
+        // 2. Ambil data material yang rusak
+        $dataDetailRetur = DB::table('detail_penerimaan')
+            ->join('penerimaan_material', 'detail_penerimaan.id_penerimaan', '=', 'penerimaan_material.id_penerimaan')
+            ->join('detail_kontrak', 'detail_penerimaan.id_detail_kontrak', '=', 'detail_kontrak.id_detail_kontrak')
+            ->join('material', 'detail_kontrak.id_material', '=', 'material.id_material') 
+            ->where('penerimaan_material.id_pengiriman', $id_pengiriman)
+            ->where('detail_penerimaan.jumlah_rusak', '>', 0)
+            ->select(
+                'material.nama_material',
+                'detail_penerimaan.jumlah_rusak',
+                'detail_penerimaan.alasan_return',
+                'detail_penerimaan.foto_bukti_rusak' // <--- INI SUDAH DITAMBAHKAN
+            )
+            ->get();
+
+        // 3. Generate Nama File
+        $nomorDO = $doRetur->nomor_pengiriman ?? 'DO-' . $id_pengiriman;
+        $namaFile = 'Bukti-Retur-' . str_replace('/', '-', $nomorDO) . '.pdf';
+
+        // 4. Load View khusus PDF
+        // Pastikan Anda membuat file: resources/views/livewire/pengadaan/pengiriman/pdf-retur.blade.php
+        $pdf = Pdf::loadView('livewire.pengadaan.pengiriman.pdf-retur', [
+            'doRetur' => $doRetur,
+            'dataDetailRetur' => $dataDetailRetur
+        ]);
+
+        // 5. Download Stream via Livewire
+        return response()->streamDownload(function () use ($pdf) {
+            echo $pdf->stream();
+        }, $namaFile);
+    }
+
+    public function closeDetailReturModal()
+    {
+        $this->isModalDetailReturOpen = false;
+        $this->dataDetailRetur = [];
+        $this->infoDORetur = null;
+    }
+    // -----------------------------------------------------
+
     public function prosesRetur($id_pengiriman)
     {
         $this->resetForm();
@@ -146,8 +216,6 @@ class PengirimanIndex extends Component
         
         $this->loadDataPO($this->id_kontrak);
 
-        // Cari tahu detail barang apa saja yang rusak pada DO ini
-        // Tabel Disesuaikan tanpa 's'
         $barangRusak = DB::table('detail_penerimaan')
             ->join('penerimaan_material', 'detail_penerimaan.id_penerimaan', '=', 'penerimaan_material.id_penerimaan')
             ->where('penerimaan_material.id_pengiriman', $id_pengiriman)
@@ -350,7 +418,6 @@ class PengirimanIndex extends Component
                     $q->where('id_kontrak', $kontrak->id_kontrak);
                 })->where('id_detail_kontrak', $detail->id_detail_kontrak)->sum('jumlah_dikirim');
 
-                // Tabel Disesuaikan tanpa 's'
                 $jumlahRusak = DB::table('detail_penerimaan')
                     ->join('penerimaan_material', 'detail_penerimaan.id_penerimaan', '=', 'penerimaan_material.id_penerimaan')
                     ->join('pengiriman', 'penerimaan_material.id_pengiriman', '=', 'pengiriman.id_pengiriman')
@@ -371,12 +438,19 @@ class PengirimanIndex extends Component
             }
         }
 
+        $doDenganRetur = DB::table('detail_penerimaan')
+            ->join('penerimaan_material', 'detail_penerimaan.id_penerimaan', '=', 'penerimaan_material.id_penerimaan')
+            ->where('detail_penerimaan.jumlah_rusak', '>', 0)
+            ->pluck('penerimaan_material.id_pengiriman')
+            ->toArray();
+
         return view('livewire.pengadaan.pengiriman.pengiriman-index', [
             'listPengiriman' => Pengiriman::with(['kontrak', 'detailPengiriman.detailKontrak.material'])
                 ->orderBy('created_at', 'desc')
                 ->where('id_pengiriman', 'like', "%{$this->search}%")
                 ->paginate(10),
-            'listKontrak' => collect($listKontrakValid) 
+            'listKontrak' => collect($listKontrakValid),
+            'doDenganRetur' => $doDenganRetur 
         ]);
     }
 }

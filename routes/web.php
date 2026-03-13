@@ -9,17 +9,22 @@ use App\Livewire\Logistik\Material\MaterialIndex;
 use App\Livewire\Pelaksanaan\PermintaanProyek\IndexPermintaan;
 use App\Livewire\Pengadaan\Supplier\SupplierIndex;
 use App\Livewire\Manajemen\Approval\ApprovalIndex;
+use App\Livewire\Logistik\Stok\StokIndex;
 
 // Pengajuan Pembelian (PR)
 use App\Livewire\Logistik\PengajuanPembelian\PengajuanIndex as LogistikPengajuanIndex;
 
-// --- IMPORT COMPONENT PENERIMAAN (BARU) ---
+// --- IMPORT COMPONENT LOGISTIK ---
 use App\Livewire\Logistik\Penerimaan\PenerimaanIndex; 
+use App\Livewire\Logistik\PermintaanProyek\PermintaanProyekLogistikIndex; 
 
 // --- IMPORT COMPONENT PENGADAAN (RFQ, KONTRAK & PENGIRIMAN) ---
 use App\Livewire\Pengadaan\Pesanan\PesananIndex;
 use App\Livewire\Pengadaan\Kontrak\KontrakIndex;
 use App\Livewire\Pengadaan\Pengiriman\PengirimanIndex; 
+
+// --- IMPORT COMPONENT PELAKSANAAN (BARU) ---
+use App\Livewire\Pelaksanaan\PenggunaanMaterial\PenggunaanIndex as PelaksanaanPenggunaanIndex; // <--- Import baru
 
 use Illuminate\Support\Facades\Route;
 
@@ -52,7 +57,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // ================= GRUP ROUTE TIM PELAKSANAAN =================
     Route::prefix('pelaksanaan')->name('pelaksanaan.')->group(function () {
+        // Halaman request barang oleh pelaksana
         Route::get('/permintaan', IndexPermintaan::class)->name('permintaan');
+
+        // --- LAPORAN PENGGUNAAN MATERIAL (BARU) ---
+        Route::get('/penggunaan', PelaksanaanPenggunaanIndex::class)->name('penggunaan'); // <--- Route baru
     });
 
     // ================= GRUP ROUTE LOGISTIK =================
@@ -64,7 +73,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/pengajuan', LogistikPengajuanIndex::class)->name('pengajuan');
 
         // --- PROSES PENERIMAAN MATERIAL (RECEIVING) ---
-        Route::get('/penerimaan', PenerimaanIndex::class)->name('penerimaan'); // <--- Tambahan Baru
+        Route::get('/penerimaan', PenerimaanIndex::class)->name('penerimaan');
+
+        // --- PROSES MONITORING STOK ---
+        Route::get('/stok', StokIndex::class)->name('stok');
+
+        // --- PROSES PEMENUHAN PERMINTAAN PROYEK ---
+        Route::get('/permintaan-proyek', PermintaanProyekLogistikIndex::class)->name('permintaan-proyek'); 
     });
 
     // ================= GRUP ROUTE TIM PENGADAAN =================

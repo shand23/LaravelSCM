@@ -87,40 +87,44 @@
                             {{ $p->status_pengiriman }}
                         </span>
                     </td>
-                    <td class="px-6 py-4 text-center text-sm font-medium flex justify-center items-center gap-2">
+                    <td class="px-6 py-4 text-center text-sm font-medium flex justify-center items-center gap-2 flex-wrap">
+                        
+                        {{-- Logika Tombol Sesuai Status --}}
                         @if($p->status_pengiriman == 'Pending')
-                            {{-- Tombol Kirim --}}
                             <button wire:click="kirimDO('{{ $p->id_pengiriman }}')" wire:confirm="Status akan diubah menjadi 'Dalam Perjalanan'. Yakin DO ini sudah dikirim ke kurir/ekspedisi?" class="text-green-600 hover:text-green-900 bg-green-50 px-2.5 py-1.5 rounded-md border border-green-100 transition flex items-center gap-1" title="Kirim Pesanan">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
                                 Kirim
                             </button>
-                            
-                            {{-- Tombol Edit --}}
                             <button wire:click="editDO('{{ $p->id_pengiriman }}')" class="text-yellow-600 hover:text-yellow-900 bg-yellow-50 px-2.5 py-1.5 rounded-md border border-yellow-100 transition flex items-center gap-1" title="Edit DO">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                                 Edit
                             </button>
-                            
-                            {{-- Tombol Delete --}}
                             <button wire:click="deleteDO('{{ $p->id_pengiriman }}')" wire:confirm="Yakin ingin menghapus data DO ini secara permanen?" class="text-red-600 hover:text-red-900 bg-red-50 px-2.5 py-1.5 rounded-md border border-red-100 transition flex items-center gap-1" title="Hapus DO">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                 Hapus
                             </button>
                         
                         @elseif($p->status_pengiriman == 'Return & Kirim Ulang')
-                            {{-- Tombol Kirim Ulang Retur --}}
                             <button wire:click="prosesRetur('{{ $p->id_pengiriman }}')" class="text-orange-600 hover:text-orange-900 bg-orange-50 px-2.5 py-1.5 rounded-md border border-orange-200 transition flex items-center gap-1 shadow-sm font-bold" title="Kirim Ulang Barang Retur">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path></svg>
                                 Kirim Ulang
                             </button>
                             
                         @else
-                            {{-- Indikator Terkunci --}}
                             <span class="inline-flex items-center gap-1 text-gray-500 text-xs font-bold bg-gray-50 px-3 py-1.5 rounded-md border border-gray-200">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
                                 Terkunci
                             </span>
                         @endif
+
+                        {{-- TOMBOL BUKTI RETUR (Selalu muncul jika DO tersebut ada history barang rusaknya) --}}
+                        @if(in_array($p->id_pengiriman, $doDenganRetur ?? []))
+                            <button wire:click="lihatDetailRetur('{{ $p->id_pengiriman }}')" class="text-purple-600 hover:text-purple-900 bg-purple-50 px-2.5 py-1.5 rounded-md border border-purple-200 transition flex items-center gap-1 shadow-sm font-bold" title="Lihat Bukti Barang Rusak">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                                Bukti Retur
+                            </button>
+                        @endif
+
                     </td>
                 </tr>
                 @empty
@@ -210,11 +214,11 @@
                         <div class="p-5 grid grid-cols-1 md:grid-cols-3 gap-5">
                             <div>
                                 <label class="block text-xs font-bold text-gray-500 mb-1">Tgl Berangkat</label>
-                                <input type="date" wire:model.live="jadwals.{{ $index }}.tanggal_berangkat" class="w-full border-gray-300 rounded-md shadow-sm border px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500">
+                                <input type="date" wire:model.live="jadwals.{{ $index }}.tanggal_berangkat" min="{{ $min_tanggal_berangkat }}" class="w-full border-gray-300 rounded-md shadow-sm border px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500">
                             </div>
                             <div>
                                 <label class="block text-xs font-bold text-gray-500 mb-1">Estimasi Tiba</label>
-                                <input type="date" wire:model="jadwals.{{ $index }}.estimasi_tanggal_tiba" min="{{ $jadwal['tanggal_berangkat'] ?? '' }}" class="w-full border-gray-300 rounded-md shadow-sm border px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500">
+                                <input type="date" wire:model="jadwals.{{ $index }}.estimasi_tanggal_tiba" min="{{ $jadwal['tanggal_berangkat'] ?? $min_tanggal_berangkat }}" class="w-full border-gray-300 rounded-md shadow-sm border px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500">
                             </div>
                             <div>
                                 <label class="block text-xs font-bold text-gray-500 mb-1">Keterangan Tambahan</label>
@@ -277,6 +281,78 @@
                 <button wire:click="store" type="button" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg shadow-sm text-sm font-medium transition-colors flex items-center gap-2">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
                     Simpan DO
+                </button>
+            </div>
+        </div>
+    </div>
+    @endif
+
+    {{-- ========================================================= --}}
+    {{-- MODAL BUKTI BARANG RUSAK (RETUR) --}}
+    {{-- ========================================================= --}}
+    @if($isModalDetailReturOpen)
+    <div class="fixed inset-0 z-[60] flex items-center justify-center bg-gray-900 bg-opacity-60 backdrop-blur-sm p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden">
+            
+            {{-- Header Modal Retur --}}
+            <div class="bg-red-50 px-6 py-4 border-b border-red-100 flex justify-between items-center">
+                <h2 class="text-lg font-bold text-red-800 flex items-center gap-2">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                    Informasi Barang Rusak / Ditolak (DO: {{ $infoDORetur->id_pengiriman ?? '-' }})
+                </h2>
+                <button wire:click="closeDetailReturModal" class="text-red-400 hover:text-red-700 transition-colors p-1">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+
+            {{-- Body Modal Retur --}}
+            <div class="p-6 overflow-y-auto bg-white flex-1">
+                <p class="text-sm text-gray-500 mb-4">Berikut adalah rincian material yang dilaporkan rusak atau tidak sesuai saat penerimaan di lokasi.</p>
+                
+                <div class="border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Nama Material</th>
+                                <th class="px-4 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Jumlah Rusak</th>
+                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Catatan Petugas</th>
+                                <th class="px-4 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Foto Bukti</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200 bg-white">
+                            @forelse($dataDetailRetur as $retur)
+                            <tr class="hover:bg-gray-50 transition-colors">
+                                <td class="px-4 py-3 text-sm text-gray-900 font-medium">{{ $retur->nama_material }}</td>
+                                <td class="px-4 py-3 text-sm text-red-600 font-bold text-center text-lg">{{ $retur->jumlah_rusak }}</td>
+                                <td class="px-4 py-3 text-sm text-gray-600 italic">"{{ $retur->catatan ?? 'Tidak ada catatan' }}"</td>
+                                <td class="px-4 py-3 text-center flex justify-center">
+                                    @if($retur->foto_bukti_rusak)
+                                        <a href="{{ asset('storage/' . $retur->foto_bukti_rusak) }}" target="_blank" title="Klik untuk memperbesar">
+                                            <img src="{{ asset('storage/' . $retur->foto_bukti_rusak) }}" alt="Bukti Rusak" class="w-16 h-16 object-cover rounded-md shadow-sm hover:scale-110 transition-transform border border-gray-300">
+                                        </a>
+                                    @else
+                                        <span class="text-xs text-gray-400 border border-dashed border-gray-300 p-2 rounded block">No Image</span>
+                                    @endif
+                                </td>
+                            </tr>
+                            @empty
+                            <tr>
+                                <td colspan="4" class="px-4 py-8 text-center text-gray-500 italic">Data rincian material rusak tidak ditemukan.</td>
+                            </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {{-- Footer Modal Retur (Menambahkan Tombol Cetak PDF) --}}
+            <div class="bg-gray-50 px-6 py-4 border-t border-gray-200 flex justify-end gap-3">
+                <button wire:click="closeDetailReturModal" type="button" class="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 px-5 py-2.5 rounded-lg shadow-sm text-sm font-medium transition-colors">
+                    Tutup
+                </button>
+                <button wire:click="cetakBuktiRetur('{{ $infoDORetur->id_pengiriman ?? '' }}')" type="button" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg shadow-sm text-sm font-medium transition-colors flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                    Cetak PDF
                 </button>
             </div>
         </div>

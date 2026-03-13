@@ -72,31 +72,38 @@
 
         @endif
 
-        {{-- ================= TIM PELAKSANAAN MENU ================= --}}
+       {{-- ================= TIM PELAKSANAAN MENU ================= --}}
         @if(auth()->user()->ROLE === 'Tim Pelaksanaan')
              
-             <div class="mt-6 mb-2 px-4">
+            <div class="mt-6 mb-2 px-4">
                 <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Pekerjaan</p>
             </div>
              
-             <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group mb-1 text-gray-400 hover:bg-gray-800 hover:text-white">
+            <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group mb-1 text-gray-400 hover:bg-gray-800 hover:text-white">
                 <svg class="w-5 h-5 text-gray-500 group-hover:text-purple-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
                 <span class="font-medium text-sm">Proyek Saya</span>
             </a>
 
+            {{-- Menu Permintaan Material --}}
+            <a href="{{ route('pelaksanaan.permintaan') }}" 
+               class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group mb-1 {{ request()->routeIs('pelaksanaan.permintaan*') ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/50' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
+                <svg class="w-5 h-5 {{ request()->routeIs('pelaksanaan.permintaan*') ? 'text-white' : 'text-gray-500 group-hover:text-indigo-400' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                </svg>
+                <span class="font-medium text-sm">Permintaan Material</span>
+            </a>
 
-            {{-- Menu Permintaan Material (HALAMAN BARU) --}}
-    <a href="{{ route('pelaksanaan.permintaan') }}" 
-       class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group mb-1 {{ request()->routeIs('pelaksanaan.permintaan*') ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/50' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
-        <svg class="w-5 h-5 {{ request()->routeIs('pelaksanaan.permintaan*') ? 'text-white' : 'text-gray-500 group-hover:text-indigo-400' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-        </svg>
-        <span class="font-medium text-sm">Permintaan Material</span>
-    </a>
+            {{-- Menu Laporan Penggunaan (HALAMAN BARU) --}}
+            <a href="{{ route('pelaksanaan.penggunaan') }}" 
+               class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group mb-1 {{ request()->routeIs('pelaksanaan.penggunaan*') ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/50' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
+                <svg class="w-5 h-5 {{ request()->routeIs('pelaksanaan.penggunaan*') ? 'text-white' : 'text-gray-500 group-hover:text-emerald-400' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
+                </svg>
+                <span class="font-medium text-sm">Laporan Penggunaan</span>
+            </a>
 
         @endif
-
-       {{-- ================= LOGISTIK MENU ================= --}}
+      {{-- ================= LOGISTIK MENU ================= --}}
             @if(auth()->user()->ROLE === 'Logistik')
                 
                 <div class="mt-6 mb-2 px-4">
@@ -135,7 +142,11 @@
                     <span class="font-medium text-sm">Pengajuan PR</span>
                 </a>
 
-                {{-- --- TAMBAHAN BARU: PENERIMAAN GUDANG --- --}}
+                {{-- --- MANAJEMEN GUDANG --- --}}
+                <div class="mt-4 mb-2 px-4">
+                    <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Manajemen Gudang</p>
+                </div>
+
                 <a href="{{ route('logistik.penerimaan') }}" 
                    class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group mb-1
                    {{ request()->routeIs('logistik.penerimaan') 
@@ -145,8 +156,26 @@
                     <span class="font-medium text-sm">Penerimaan Gudang</span>
                 </a>
 
-            @endif
-        
+                <a href="{{ route('logistik.stok') }}" 
+                   class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group mb-1
+                   {{ request()->routeIs('logistik.stok') 
+                      ? 'bg-purple-600 text-white shadow-lg shadow-purple-900/40 translate-x-1' 
+                      : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
+                    <svg class="w-5 h-5 {{ request()->routeIs('logistik.stok') ? 'text-white' : 'text-gray-500 group-hover:text-purple-400' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"></path></svg>
+                    <span class="font-medium text-sm">Monitor Stok</span>
+                </a>
+
+                {{-- --- MENU BARU: PERMINTAAN PROYEK --- --}}
+                <a href="{{ route('logistik.permintaan-proyek') }}" 
+                   class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group mb-1
+                   {{ request()->routeIs('logistik.permintaan-proyek') 
+                      ? 'bg-purple-600 text-white shadow-lg shadow-purple-900/40 translate-x-1' 
+                      : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
+                    <svg class="w-5 h-5 {{ request()->routeIs('logistik.permintaan-proyek') ? 'text-white' : 'text-gray-500 group-hover:text-purple-400' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
+                    <span class="font-medium text-sm">Permintaan Proyek</span>
+                </a>
+
+            @endif      
        {{-- ================= TIM PENGADAAN MENU ================= --}}
 @if(auth()->user()->ROLE === 'Tim Pengadaan')
     
