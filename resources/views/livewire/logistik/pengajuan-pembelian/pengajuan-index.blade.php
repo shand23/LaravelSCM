@@ -223,7 +223,7 @@
                     </div>
                     <div>
                         <p class="text-[10px] text-gray-500 uppercase font-bold tracking-widest mb-1">Dibuat Oleh</p>
-                        <p class="font-bold text-gray-800">{{ $selectedPengajuan->user->nama_user ?? '-' }}</p>
+                        <p class="font-bold text-gray-800">{{ $selectedPengajuan->user->nama_lengkap ?? '-' }}</p>
                     </div>
                 </div>
                 

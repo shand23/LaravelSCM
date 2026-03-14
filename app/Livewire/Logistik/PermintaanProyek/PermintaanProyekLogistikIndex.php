@@ -7,7 +7,10 @@ use Livewire\WithPagination;
 use Livewire\Attributes\Layout;
 use App\Models\PermintaanProyek;
 use App\Models\StokBatchFifo;
+use App\Models\PengajuanPembelian; 
+use App\Models\DetailPengajuanPembelian; 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 #[Layout('layouts.app')]
 class PermintaanProyekLogistikIndex extends Component
@@ -15,7 +18,7 @@ class PermintaanProyekLogistikIndex extends Component
     use WithPagination;
 
     public $search = '';
-    public $filterStatus = ''; // Untuk filter dropdown status
+    public $filterStatus = '';
 
     // Variabel Modal Detail
     public $isModalOpen = false;
@@ -32,7 +35,7 @@ class PermintaanProyekLogistikIndex extends Component
         $this->resetPage();
     }
 
-    // Buka Modal dan load detail barang yang diminta
+    // Membuka modal dan memuat detail permintaan
     public function lihatDetail($id_permintaan)
     {
         $this->permintaanTerpilih = PermintaanProyek::with(['proyek', 'user', 'detailPermintaan.material'])->find($id_permintaan);
@@ -50,7 +53,7 @@ class PermintaanProyekLogistikIndex extends Component
         $this->detailBarang = [];
     }
 
-    // FUNGSI INTI: Eksekusi pemotongan stok FIFO
+    // FUNGSI INTI: Eksekusi pemotongan stok FIFO & Auto Create PR
     public function prosesPemenuhanStok()
     {
         if (!$this->permintaanTerpilih) return;
@@ -58,17 +61,18 @@ class PermintaanProyekLogistikIndex extends Component
         $id_permintaan = $this->permintaanTerpilih->id_permintaan;
 
         DB::transaction(function () use ($id_permintaan) {
+            // Lock tabel untuk mencegah race condition (double entry)
             $permintaan = PermintaanProyek::with('detailPermintaan')->lockForUpdate()->find($id_permintaan);
             
             $semuaTerpenuhi = true; 
-            $adaYangDiproses = false;
+            $kekuranganMaterial = []; // Array penampung material yang harus dibeli (PR)
 
             foreach ($permintaan->detailPermintaan as $detail) {
-                // Hitung sisa yang belum terkirim
+                // 1. Hitung sisa kebutuhan yang belum terkirim
                 $kebutuhanQty = $detail->jumlah_diminta - $detail->jumlah_terkirim;
 
                 if ($kebutuhanQty > 0) {
-                    // Cari stok FIFO
+                    // 2. Cari stok FIFO di gudang (berdasarkan tanggal masuk paling lama)
                     $batches = StokBatchFifo::where('id_material', $detail->id_material)
                                 ->where('sisa_stok', '>', 0)
                                 ->orderBy('tanggal_masuk', 'asc')
@@ -77,15 +81,18 @@ class PermintaanProyekLogistikIndex extends Component
 
                     $totalDiambilDariGudang = 0;
 
+                    // 3. Eksekusi pemotongan Batch per Batch
                     foreach ($batches as $batch) {
                         if ($kebutuhanQty == 0) break; 
 
                         if ($batch->sisa_stok >= $kebutuhanQty) {
+                            // Stok di batch ini cukup untuk menutupi semua sisa kebutuhan
                             $batch->sisa_stok -= $kebutuhanQty;
                             $totalDiambilDariGudang += $kebutuhanQty;
                             $kebutuhanQty = 0; 
                             $batch->save();
                         } else {
+                            // Stok di batch ini tidak cukup, kuras habis batch ini
                             $kebutuhanQty -= $batch->sisa_stok;
                             $totalDiambilDariGudang += $batch->sisa_stok;
                             $batch->sisa_stok = 0;
@@ -93,34 +100,63 @@ class PermintaanProyekLogistikIndex extends Component
                         }
                     }
 
-                    // Update jumlah terkirim di detail_permintaan_proyek
+                    // 4. Update riwayat jumlah terkirim di detail_permintaan_proyek
                     if ($totalDiambilDariGudang > 0) {
                         $detail->jumlah_terkirim += $totalDiambilDariGudang;
                         $detail->save();
-                        $adaYangDiproses = true;
                     }
 
-                    // Cek apakah masih ada kurang
-                    if ($detail->jumlah_terkirim < $detail->jumlah_diminta) {
+                    // 5. Cek apakah material ini MASIH KURANG setelah gudang dikuras
+                    if ($kebutuhanQty > 0) {
                         $semuaTerpenuhi = false;
+                        
+                        // Masukkan ke daftar belanjaan (PR)
+                        $kekuranganMaterial[] = [
+                            'id_material' => $detail->id_material,
+                            'jumlah_kurang' => $kebutuhanQty
+                        ];
                     }
                 }
             }
 
-            // Update Status Permintaan
-            // Jika status awalnya 'Menunggu Persetujuan', ubah sesuai hasil proses
+            // 6. Tentukan Status Permintaan & Buat PR otomatis jika ada kurang
             if ($semuaTerpenuhi) {
                 $permintaan->status_permintaan = 'Selesai';
-            } elseif ($adaYangDiproses || !$semuaTerpenuhi) {
+                session()->flash('message', 'Stok mencukupi! Seluruh permintaan berhasil dipenuhi dari gudang.');
+            } else {
                 $permintaan->status_permintaan = 'Diproses Sebagian';
                 
-                // Nanti logika insert ke tabel Pengajuan Pengadaan ditaruh di sini
+                // === LOGIKA AUTO CREATE PENGAJUAN PEMBELIAN (PR) ===
+                if (count($kekuranganMaterial) > 0) {
+                    
+                    // Insert Header PR
+                    // Pastikan Auth::id() sesuai dengan format VARCHAR(20) di tabel users Anda.
+                    // Jika saat testing tidak ada session login, ini akan pakai ID default 'USR001'
+                    $pengajuanBaru = PengajuanPembelian::create([
+                        'id_user_logistik' => Auth::id() ?? 'USR001', 
+                        'referensi_id_permintaan' => $permintaan->id_permintaan,
+                        'tanggal_pengajuan' => date('Y-m-d'),
+                        'status_pengajuan' => 'Menunggu Pengadaan', // Menggunakan ENUM dari DB terbaru
+                    ]);
+
+                    // Insert Detail PR
+                    foreach ($kekuranganMaterial as $kurang) {
+                        DetailPengajuanPembelian::create([
+                            'id_pengajuan' => $pengajuanBaru->id_pengajuan, 
+                            'id_material' => $kurang['id_material'],
+                            'jumlah_minta_beli' => $kurang['jumlah_kurang'], // Menggunakan kolom jumlah_minta_beli
+                        ]);
+                    }
+
+                    session()->flash('message', 'Diproses Sebagian! Kekurangan material otomatis diteruskan menjadi Pengajuan Pembelian (' . $pengajuanBaru->id_pengajuan . ').');
+                } else {
+                    session()->flash('message', 'Pemotongan FIFO berhasil dijalankan (Diproses Sebagian).');
+                }
             }
             
             $permintaan->save();
         });
 
-        session()->flash('message', 'Pemrosesan stok FIFO berhasil dijalankan.');
         $this->closeModal();
     }
 

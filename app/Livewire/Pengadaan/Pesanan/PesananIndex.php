@@ -42,29 +42,45 @@ class PesananIndex extends Component
     {
         $pesanan = Pesanan::with(['supplier', 'pengajuan', 'detailPesanan.material'])->findOrFail($id);
 
-        // Ubah status otomatis jika masih Draft menjadi Proses Negosiasi
         if ($pesanan->status_pesanan === 'Draft') {
             $pesanan->update(['status_pesanan' => 'Proses Negosiasi']);
         }
 
-        // Generate nama file (Ganti garis miring jadi strip agar valid sebagai nama file)
         $namaFile = 'RFQ-' . str_replace('/', '-', $pesanan->nomor_pesanan) . '.pdf';
-
-        // Load view khusus PDF
         $pdf = Pdf::loadView('livewire.pengadaan.pesanan.pdf-rfq', ['pesanan' => $pesanan]);
 
-        // Download file langsung via Livewire
         return response()->streamDownload(function () use ($pdf) {
             echo $pdf->stream();
         }, $namaFile);
     }
 
-    public function create()
+    // --- MENGGANTIKAN FUNGSI CREATE LAMA ---
+    public function createFromPR($id_pengajuan)
     {
-        $this->reset(['id_pengajuan', 'id_supplier', 'items', 'edit_id']);
+        $this->reset(['id_supplier', 'items', 'edit_id']);
         $this->isEditMode = false;
         $this->resetErrorBag();
+        
         $this->tanggal_pesanan = date('Y-m-d');
+        $this->id_pengajuan = $id_pengajuan;
+
+        // Otomatis load material dari PR yang dipilih
+        $this->items = [];
+        $pr = PengajuanPembelian::with('detailPengajuan.material')->find($id_pengajuan);
+        
+        if ($pr) {
+            foreach ($pr->detailPengajuan as $detail) {
+                $this->items[] = [
+                    'id_material' => $detail->id_material,
+                    'nama_material' => $detail->material->nama_material,
+                    'satuan' => $detail->material->satuan,
+                    'jumlah_asal' => $detail->jumlah_minta_beli,
+                    'jumlah_pesan' => $detail->jumlah_minta_beli, 
+                    'selected' => true 
+                ];
+            }
+        }
+
         $this->isModalOpen = true;
     }
 
@@ -73,7 +89,6 @@ class PesananIndex extends Component
         $this->resetErrorBag();
         $pesanan = Pesanan::with('detailPesanan')->findOrFail($id);
 
-        // UBAH: Hanya tolak jika status sudah Berlanjut ke Kontrak
         if ($pesanan->status_pesanan === 'Berlanjut ke Kontrak') {
             session()->flash('error', 'Pesanan yang sudah berlanjut ke kontrak tidak dapat diedit.');
             return;
@@ -111,7 +126,6 @@ class PesananIndex extends Component
     {
         $pesanan = Pesanan::findOrFail($id);
 
-        // UBAH: Hanya tolak jika status sudah Berlanjut ke Kontrak
         if ($pesanan->status_pesanan === 'Berlanjut ke Kontrak') {
             session()->flash('error', 'Pesanan yang sudah berlanjut ke kontrak tidak dapat dihapus.');
             return;
@@ -138,28 +152,6 @@ class PesananIndex extends Component
     {
         $this->isModalOpen = false;
         $this->resetErrorBag();
-    }
-
-    public function updatedIdPengajuan($id)
-    {
-        if (!$this->isEditMode) {
-            $this->items = [];
-            if ($id) {
-                $pr = PengajuanPembelian::with('detailPengajuan.material')->find($id);
-                if ($pr) {
-                    foreach ($pr->detailPengajuan as $detail) {
-                        $this->items[] = [
-                            'id_material' => $detail->id_material,
-                            'nama_material' => $detail->material->nama_material,
-                            'satuan' => $detail->material->satuan,
-                            'jumlah_asal' => $detail->jumlah_minta_beli,
-                            'jumlah_pesan' => $detail->jumlah_minta_beli, 
-                            'selected' => true 
-                        ];
-                    }
-                }
-            }
-        }
     }
 
     private function generateNomorPesanan()
@@ -215,7 +207,7 @@ class PesananIndex extends Component
                 $pesanan = Pesanan::create([
                     'id_pengajuan' => $this->id_pengajuan,
                     'id_supplier' => $this->id_supplier,
-                    'id_user_pengadaan' => Auth::id(), 
+                    'id_user_pengadaan' => Auth::id() ?? 'USR001', // Sesuaikan auth Anda
                     'nomor_pesanan' => $this->generateNomorPesanan(),
                     'tanggal_pesanan' => $this->tanggal_pesanan,
                     'status_pesanan' => 'Draft',
@@ -229,6 +221,7 @@ class PesananIndex extends Component
                     ]);
                 }
 
+                // Update status PR agar hilang dari antrean "Menunggu Pengadaan"
                 PengajuanPembelian::where('id_pengajuan', $this->id_pengajuan)
                     ->update(['status_pengajuan' => 'Proses RFQ']);
                     
@@ -241,24 +234,23 @@ class PesananIndex extends Component
 
     public function render()
     {
+        // Data tabel riwayat Pesanan (Bawah)
         $listPesanan = Pesanan::with(['supplier', 'pengajuan'])
             ->where('nomor_pesanan', 'like', "%{$this->search}%")
             ->orderBy('created_at', 'desc')
             ->paginate(10);
 
-        $listPRQuery = PengajuanPembelian::with('permintaanProyek.proyek')
-            ->whereIn('status_pengajuan', ['Menunggu Pengadaan', 'Proses RFQ']);
-            
-        if ($this->isEditMode && $this->id_pengajuan) {
-            $listPRQuery->orWhere('id_pengajuan', $this->id_pengajuan);
-        }
+        // Data tabel Antrean PR (Atas) - Hanya yang belum dibuat RFQ
+        $listPRPending = PengajuanPembelian::with('permintaanProyek.proyek')
+            ->where('status_pengajuan', 'Menunggu Pengadaan')
+            ->orderBy('tanggal_pengajuan', 'asc')
+            ->get();
 
-        $listPR = $listPRQuery->get();
         $listSupplier = Supplier::orderBy('nama_supplier', 'asc')->get();
 
         return view('livewire.pengadaan.pesanan.pesanan-index', [
             'listPesanan' => $listPesanan,
-            'listPR' => $listPR,
+            'listPRPending' => $listPRPending,
             'listSupplier' => $listSupplier,
         ]);
     }

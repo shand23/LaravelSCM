@@ -109,7 +109,7 @@
                         <p class="text-gray-400 text-xs font-bold uppercase mt-1">Proyek: {{ $permintaanTerpilih->proyek->nama_proyek ?? '-' }}</p>
                     </div>
                 </div>
-                <button wire:click="closeModal" class="text-gray-400 hover:text-white bg-gray-800 p-2 rounded-xl">
+                <button wire:click="closeModal" class="text-gray-400 hover:text-white bg-gray-800 p-2 rounded-xl transition-colors">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
@@ -120,7 +120,7 @@
                         <tr>
                             <th class="px-4 py-3 rounded-l-lg">Material</th>
                             <th class="px-4 py-3 text-center">Jumlah Diminta</th>
-                            <th class="px-4 py-3 text-center">Terkirim / Dipenuhi</th>
+                            <th class="px-4 py-3 text-center">Terkirim (Gudang)</th>
                             <th class="px-4 py-3 text-center rounded-r-lg">Kekurangan</th>
                         </tr>
                     </thead>
@@ -143,15 +143,26 @@
             <div class="px-6 py-4 bg-gray-50 border-t flex justify-end gap-3 rounded-b-3xl">
                 <button wire:click="closeModal" class="px-5 py-2.5 text-sm font-bold text-gray-600 hover:bg-gray-200 rounded-xl transition-colors">Batal</button>
                 
-                {{-- Tombol Proses hanya muncul jika status bukan Selesai --}}
-                @if($permintaanTerpilih->status_permintaan !== 'Selesai')
-                <button wire:click="prosesPemenuhanStok" wire:loading.attr="disabled" class="px-5 py-2.5 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-md flex items-center gap-2 transition-all disabled:opacity-50">
+                {{-- Tombol hanya muncul jika ada material yang jumlah_terkirim < jumlah_diminta --}}
+                @php
+                    $masihAdaKurang = false;
+                    foreach($detailBarang as $d) {
+                        if ($d->jumlah_diminta - $d->jumlah_terkirim > 0) $masihAdaKurang = true;
+                    }
+                @endphp
+
+                @if($masihAdaKurang)
+                <button wire:click="prosesPemenuhanStok" wire:loading.attr="disabled" class="px-5 py-2.5 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-md flex items-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
                     <span wire:loading.remove wire:target="prosesPemenuhanStok">Proses Tarik Stok Gudang</span>
                     <span wire:loading wire:target="prosesPemenuhanStok">Memproses...</span>
                 </button>
+                @else
+                <button disabled class="px-5 py-2.5 text-sm font-bold text-white bg-emerald-500 rounded-xl shadow-md flex items-center gap-2 cursor-not-allowed opacity-80">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                    Semua Telah Terpenuhi
+                </button>
                 @endif
             </div>
-
         </div>
     </div>
     @endif

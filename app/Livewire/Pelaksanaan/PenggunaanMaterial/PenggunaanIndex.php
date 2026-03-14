@@ -16,17 +16,21 @@ class PenggunaanIndex extends Component
 {
     use WithPagination;
 
+    // State untuk UI
     public $search = '';
     public $isModalOpen = false;
+    public $isModalDetailOpen = false;
 
-    // Form Properties
+    // Data untuk Form Input
     public $id_permintaan_selected = '';
     public $area_pekerjaan = '';
     public $tanggal_laporan = '';
     public $keterangan_umum = '';
-    
-    // Array untuk menampung inputan detail dari lapangan
     public $detailBarang = [];
+
+    // Data untuk Lihat Detail
+    public $laporanTerpilih = null;
+    public $detailItems = [];
 
     public function mount()
     {
@@ -38,6 +42,7 @@ class PenggunaanIndex extends Component
         $this->resetPage();
     }
 
+    // --- LOGIKA MODAL INPUT ---
     public function openModal()
     {
         $this->resetForm();
@@ -47,7 +52,6 @@ class PenggunaanIndex extends Component
     public function closeModal()
     {
         $this->isModalOpen = false;
-        $this->resetForm();
     }
 
     public function resetForm()
@@ -59,22 +63,20 @@ class PenggunaanIndex extends Component
         $this->tanggal_laporan = date('Y-m-d');
     }
 
-    // Fungsi ini dipanggil otomatis oleh Livewire saat dropdown Permintaan dipilih
+    // Trigger saat dropdown permintaan dipilih
     public function updatedIdPermintaanSelected($id_permintaan)
     {
-        $this->detailBarang = []; // Reset dulu
-
+        $this->detailBarang = [];
         if ($id_permintaan) {
             $permintaan = PermintaanProyek::with('detailPermintaan.material')->find($id_permintaan);
-            
             if ($permintaan) {
-                // Looping barang yang diminta untuk dijadikan form isian
                 foreach ($permintaan->detailPermintaan as $detail) {
                     $this->detailBarang[] = [
                         'id_material' => $detail->id_material,
-                        'nama_material' => $detail->material->nama_material ?? 'Unknown',
-                        'jumlah_terkirim' => $detail->jumlah_terkirim, // Sebagai informasi referensi
-                        'jumlah_terpasang_riil' => 0,
+                        'nama_material' => $detail->material->nama_material ?? 'Material Tidak Diketahui',
+                        'jumlah_terkirim' => $detail->jumlah_terkirim,
+                        // Set default awal terpasang sama dengan terkirim
+                        'jumlah_terpasang_riil' => $detail->jumlah_terkirim, 
                         'jumlah_rusak_lapangan' => 0,
                         'jumlah_sisa_material' => 0,
                         'catatan_khusus' => ''
@@ -84,8 +86,38 @@ class PenggunaanIndex extends Component
         }
     }
 
+    // Trigger otomatis saat inputan di dalam array detailBarang berubah (rusak/sisa)
+ // Trigger otomatis saat inputan di dalam array detailBarang berubah (rusak/sisa)
+    public function updatedDetailBarang($value, $key)
+    {
+        $parts = explode('.', $key);
+        
+        if (count($parts) === 2) {
+            $index = $parts[0];
+            $field = $parts[1];
+
+            if (in_array($field, ['jumlah_rusak_lapangan', 'jumlah_sisa_material'])) {
+                // 1. VALIDASI: Jika user input angka minus, otomatis kembalikan ke 0
+                if ($value < 0 || $value === '') {
+                    $this->detailBarang[$index][$field] = 0;
+                }
+
+                $terkirim = (float) ($this->detailBarang[$index]['jumlah_terkirim'] ?? 0);
+                $rusak = (float) ($this->detailBarang[$index]['jumlah_rusak_lapangan'] ?: 0);
+                $sisa = (float) ($this->detailBarang[$index]['jumlah_sisa_material'] ?: 0);
+
+                // Kalkulasi: Terpasang = Terkirim - Rusak - Sisa
+                $terpasang = $terkirim - $rusak - $sisa;
+                
+                // Pastikan hasilnya tidak minus jika jumlah rusak + sisa melebihi terkirim
+                $this->detailBarang[$index]['jumlah_terpasang_riil'] = max(0, $terpasang);
+            }
+        }
+    }
+
     public function simpanLaporan()
     {
+        // 2. VALIDASI BACKEND: Tambahkan aturan min:0 untuk rusak dan sisa
         $this->validate([
             'id_permintaan_selected' => 'required',
             'tanggal_laporan' => 'required|date',
@@ -93,65 +125,83 @@ class PenggunaanIndex extends Component
             'detailBarang.*.jumlah_terpasang_riil' => 'required|numeric|min:0',
             'detailBarang.*.jumlah_rusak_lapangan' => 'required|numeric|min:0',
             'detailBarang.*.jumlah_sisa_material' => 'required|numeric|min:0',
+        ], [
+            'detailBarang.*.*.min' => 'Input jumlah tidak boleh bernilai minus.'
         ]);
 
-        DB::transaction(function () {
-            // Ambil data proyek dari permintaan
-            $permintaan = PermintaanProyek::find($this->id_permintaan_selected);
-            
-            // Generate ID Penggunaan (Format: USE-YYYYMMDD-XXX)
-            $datePrefix = date('Ymd');
-            $lastPenggunaan = PenggunaanMaterial::where('id_penggunaan', 'like', 'USE-' . $datePrefix . '-%')
-                                                ->orderBy('id_penggunaan', 'desc')->first();
-            $urut = $lastPenggunaan ? (int)substr($lastPenggunaan->id_penggunaan, -3) + 1 : 1;
-            $id_penggunaan = 'USE-' . $datePrefix . '-' . str_pad($urut, 3, '0', STR_PAD_LEFT);
+        // ... Lanjutan kode try-catch DB::transaction() sama seperti sebelumnya ...
+        try {
+            DB::transaction(function () {
+                $permintaan = PermintaanProyek::find($this->id_permintaan_selected);
+                
+                // Generate ID: USE-YYYYMMDD-XXX
+                $prefix = 'USE-' . date('Ymd');
+                $last = PenggunaanMaterial::where('id_penggunaan', 'like', $prefix . '%')->orderBy('id_penggunaan', 'desc')->first();
+                $seq = $last ? (int)substr($last->id_penggunaan, -3) + 1 : 1;
+                $id_penggunaan = $prefix . '-' . str_pad($seq, 3, '0', STR_PAD_LEFT);
 
-            // 1. Simpan Header Penggunaan
-            PenggunaanMaterial::create([
-                'id_penggunaan' => $id_penggunaan,
-                'id_permintaan' => $this->id_permintaan_selected,
-                'id_proyek' => $permintaan->id_proyek,
-                'id_user_pelaksana' => Auth::user()->id_user ?? Auth::id(), // Sesuaikan dengan field user Anda
-                'tanggal_laporan' => $this->tanggal_laporan,
-                'area_pekerjaan' => $this->area_pekerjaan,
-                'keterangan_umum' => $this->keterangan_umum,
-            ]);
-
-            // 2. Simpan Detail Penggunaan
-            foreach ($this->detailBarang as $index => $item) {
-                $id_detail = $id_penggunaan . '-D' . ($index + 1);
-
-                DetailPenggunaanMaterial::create([
-                    'id_detail_penggunaan' => $id_detail,
+                PenggunaanMaterial::create([
                     'id_penggunaan' => $id_penggunaan,
-                    'id_material' => $item['id_material'],
-                    'jumlah_terpasang_riil' => $item['jumlah_terpasang_riil'],
-                    'jumlah_rusak_lapangan' => $item['jumlah_rusak_lapangan'],
-                    'jumlah_sisa_material' => $item['jumlah_sisa_material'],
-                    'catatan_khusus' => $item['catatan_khusus'] ?? null,
+                    'id_permintaan' => $this->id_permintaan_selected,
+                    'id_proyek' => $permintaan->id_proyek,
+                    'id_user_pelaksana' => Auth::id(),
+                    'tanggal_laporan' => $this->tanggal_laporan,
+                    'area_pekerjaan' => $this->area_pekerjaan,
+                    'keterangan_umum' => $this->keterangan_umum,
                 ]);
-            }
-        });
 
-        session()->flash('message', 'Laporan Penggunaan Material berhasil disimpan!');
-        $this->closeModal();
+                foreach ($this->detailBarang as $index => $item) {
+                    DetailPenggunaanMaterial::create([
+                        'id_detail_penggunaan' => $id_penggunaan . '-D' . ($index + 1),
+                        'id_penggunaan' => $id_penggunaan,
+                        'id_material' => $item['id_material'],
+                        'jumlah_terpasang_riil' => $item['jumlah_terpasang_riil'],
+                        'jumlah_rusak_lapangan' => $item['jumlah_rusak_lapangan'],
+                        'jumlah_sisa_material' => $item['jumlah_sisa_material'],
+                        'catatan_khusus' => $item['catatan_khusus']
+                    ]);
+                }
+            });
+
+            session()->flash('message', 'Laporan Berhasil Disimpan!');
+            $this->closeModal();
+        } catch (\Exception $e) {
+            session()->flash('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
+
+    // --- LOGIKA MODAL DETAIL ---
+    public function bukaDetail($id)
+    {
+        $this->laporanTerpilih = PenggunaanMaterial::with(['proyek', 'permintaan', 'pelaksana'])->find($id);
+        if ($this->laporanTerpilih) {
+            $this->detailItems = DetailPenggunaanMaterial::with('material')->where('id_penggunaan', $id)->get();
+            $this->isModalDetailOpen = true;
+        }
+    }
+
+    public function tutupDetail()
+    {
+        $this->isModalDetailOpen = false;
+        $this->laporanTerpilih = null;
     }
 
     public function render()
     {
-        // Tampilkan daftar permintaan yang sudah diproses sebagian atau selesai untuk dipilih di dropdown
-        $daftarPermintaan = PermintaanProyek::whereIn('status_permintaan', ['Diproses Sebagian', 'Selesai'])->get();
-
-        // Tampilkan daftar laporan penggunaan di tabel utama
-        $listLaporan = PenggunaanMaterial::with(['proyek', 'permintaan'])
-            ->where('id_penggunaan', 'like', '%' . $this->search . '%')
-            ->orWhere('area_pekerjaan', 'like', '%' . $this->search . '%')
-            ->latest('tanggal_laporan')
-            ->paginate(10);
+        // 1. Ambil semua ID Permintaan yang sudah pernah dilaporkan (digunakan)
+        $usedPermintaanIds = PenggunaanMaterial::pluck('id_permintaan')->toArray();
 
         return view('livewire.pelaksanaan.penggunaan-material.penggunaan-index', [
-            'listLaporan' => $listLaporan,
-            'daftarPermintaan' => $daftarPermintaan
+            'listLaporan' => PenggunaanMaterial::with(['proyek'])
+                ->where('id_penggunaan', 'like', '%' . $this->search . '%')
+                ->orWhere('area_pekerjaan', 'like', '%' . $this->search . '%')
+                ->latest()
+                ->paginate(10),
+            
+            // 2. Filter data permintaan, hanya tampilkan yang ID-nya tidak ada di array $usedPermintaanIds
+            'daftarPermintaan' => PermintaanProyek::whereIn('status_permintaan', ['Diproses Sebagian', 'Selesai'])
+                ->whereNotIn('id_permintaan', $usedPermintaanIds) 
+                ->get()
         ]);
     }
 }
