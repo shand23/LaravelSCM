@@ -1,47 +1,116 @@
 <?php
 
-namespace App\Livewire\Manajemen\Approval; // Sudah diperbaiki menjadi Manajemen
+namespace App\Livewire\Manajemen\Approval;
 
 use Livewire\Component;
 use Livewire\WithPagination;
-use App\Models\PengajuanMaterial;
+use Livewire\Attributes\Layout;
+use App\Models\PermintaanProyek;
+use App\Models\Proyek; // Pastikan Model Proyek sudah di-import
 
+#[Layout('layouts.app')] 
 class ApprovalIndex extends Component
 {
     use WithPagination;
 
-    public $selectedPengajuan = null;
-    public $isModalDetailOpen = false;
+    // Properti untuk Pencarian dan Filter
+    public $search = '';
+    public $filterProyek = '';
+    public $filterStatus = 'Menunggu Persetujuan'; // Default yang tampil adalah yang butuh persetujuan
+    
+    // Properti untuk Sorting
+    public $sortColumn = 'tanggal_permintaan';
+    public $sortDirection = 'desc';
+
+    // Properti untuk Modal Detail
+    public $permintaanDipilih; 
+    public $isModalOpen = false; 
+
+    // Reset halaman ke 1 jika user mengetik pencarian atau mengganti filter
+    public function updatingSearch() { $this->resetPage(); }
+    public function updatingFilterProyek() { $this->resetPage(); }
+    public function updatingFilterStatus() { $this->resetPage(); }
+
+    // Fungsi untuk Sorting tabel
+    public function sortBy($column)
+    {
+        if ($this->sortColumn === $column) {
+            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            $this->sortColumn = $column;
+            $this->sortDirection = 'asc';
+        }
+    }
 
     public function render()
     {
-        $approvals = PengajuanMaterial::with(['proyek', 'userPengaju'])
-            ->where('status_pengajuan', 'Menunggu')
-            ->where('tipe_pengajuan', 'Permintaan Pelaksanaan')
-            ->orderBy('tanggal_pengajuan', 'asc')
-            ->paginate(10);
+        $query = PermintaanProyek::with('proyek');
 
-        return view('livewire.manajemen.approval.approval-index', compact('approvals'))
-            ->layout('layouts.app');
-    }
+        // 1. Terapkan Filter Status
+        if ($this->filterStatus !== '') {
+            $query->where('status_permintaan', $this->filterStatus);
+        }
 
-    public function showDetail($id)
-    {
-        $this->selectedPengajuan = PengajuanMaterial::with('detailPengajuan.material')->findOrFail($id);
-        $this->isModalDetailOpen = true;
-    }
+        // 2. Terapkan Filter Proyek
+        if ($this->filterProyek !== '') {
+            $query->where('id_proyek', $this->filterProyek);
+        }
 
-    public function approve($id)
-    {
-        $pengajuan = PengajuanMaterial::findOrFail($id);
-        $pengajuan->update(['status_pengajuan' => 'Disetujui PM']);
+        // 3. Terapkan Pencarian (Search)
+        if ($this->search !== '') {
+            $query->where(function($q) {
+                $q->where('id_permintaan', 'like', '%' . $this->search . '%')
+                  ->orWhereHas('proyek', function($subQ) {
+                      $subQ->where('nama_proyek', 'like', '%' . $this->search . '%');
+                  });
+            });
+        }
+
+        // 4. Terapkan Sorting dan Pagination
+        $dataPermintaan = $query->orderBy($this->sortColumn, $this->sortDirection)->paginate(10);
         
-        session()->flash('message', 'Pengajuan ' . $id . ' telah disetujui.');
-        $this->isModalDetailOpen = false;
+        // Ambil data proyek untuk dropdown filter
+        $daftarProyek = Proyek::all();
+
+        return view('livewire.manajemen.approval.approval-index', [
+            'dataPermintaan' => $dataPermintaan,
+            'daftarProyek' => $daftarProyek
+        ]);
+    }
+
+    // ================= FUNGSI MODAL & AKSI =================
+
+    public function lihatDetail($id)
+    {
+        $this->permintaanDipilih = PermintaanProyek::with(['proyek', 'detailPermintaan.material'])
+                                        ->where('id_permintaan', $id)
+                                        ->first();
+        $this->isModalOpen = true;
     }
 
     public function closeModal()
     {
-        $this->isModalDetailOpen = false;
+        $this->isModalOpen = false;
+        $this->permintaanDipilih = null;
+    }
+
+    public function approve($id)
+    {
+        $permintaan = PermintaanProyek::where('id_permintaan', $id)->first();
+        if ($permintaan) {
+            $permintaan->update(['status_permintaan' => 'Disetujui PM']); 
+            $this->closeModal();
+            session()->flash('success', 'Permintaan #'.$id.' berhasil disetujui!');
+        }
+    }
+
+    public function tolak($id)
+    {
+        $permintaan = PermintaanProyek::where('id_permintaan', $id)->first();
+        if ($permintaan) {
+            $permintaan->update(['status_permintaan' => 'Ditolak']);
+            $this->closeModal();
+            session()->flash('error', 'Permintaan #'.$id.' telah ditolak.');
+        }
     }
 }

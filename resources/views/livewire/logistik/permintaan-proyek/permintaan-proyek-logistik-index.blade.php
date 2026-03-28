@@ -26,8 +26,8 @@
             
             <div class="w-full md:w-64">
                 <select wire:model.live="filterStatus" class="w-full py-2.5 border-gray-200 rounded-xl focus:ring-indigo-500 text-sm font-medium bg-gray-50">
-                    <option value="">Semua Status</option>
-                    <option value="Menunggu Persetujuan">Menunggu Persetujuan</option>
+                    <option value="">Semua Status Approved</option>
+                    <option value="Disetujui PM">Disetujui PM</option>
                     <option value="Diproses Sebagian">Diproses Sebagian</option>
                     <option value="Selesai">Selesai</option>
                 </select>
@@ -54,7 +54,7 @@
                         <td class="px-6 py-4">
                             <div class="font-bold text-gray-800 uppercase">{{ $item->id_permintaan }}</div>
                             <div class="text-[11px] text-gray-500 font-bold mt-1">Tgl: {{ \Carbon\Carbon::parse($item->tanggal_permintaan)->format('d M Y') }}</div>
-                            <div class="text-[10px] text-indigo-500 font-bold mt-0.5">Oleh: {{ $item->user->name ?? 'User' }}</div>
+                            <div class="text-[10px] text-indigo-500 font-bold mt-0.5">Oleh: {{ $item->user->nama_lengkap ?? 'nama_lengkap' }}</div>
                         </td>
 
                         <td class="px-6 py-4">
@@ -63,8 +63,8 @@
                         </td>
 
                         <td class="px-6 py-4 text-center">
-                            @if($item->status_permintaan == 'Menunggu Persetujuan')
-                                <span class="bg-amber-100 text-amber-700 px-3 py-1 rounded-lg text-xs font-black">Menunggu</span>
+                            @if($item->status_permintaan == 'Disetujui PM')
+                                <span class="bg-amber-100 text-amber-700 px-3 py-1 rounded-lg text-xs font-black">Disetujui PM</span>
                             @elseif($item->status_permintaan == 'Diproses Sebagian')
                                 <span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-lg text-xs font-black">Proses Sebagian</span>
                             @elseif($item->status_permintaan == 'Selesai')
@@ -82,7 +82,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="5" class="px-6 py-16 text-center text-gray-400 font-bold">Belum ada data permintaan material.</td>
+                        <td colspan="5" class="px-6 py-16 text-center text-gray-400 font-bold">Belum ada data permintaan material yang disetujui.</td>
                     </tr>
                     @endforelse
                 </tbody>
@@ -135,15 +135,35 @@
                                 {{ $kurang > 0 ? $kurang : '✓ Lunas' }}
                             </td>
                         </tr>
+                        
+                     {{-- MENAMPILKAN RIWAYAT BATCH MENGGUNAKAN ARRAY --}}
+@if(isset($riwayatBatch[$det->id_material]))
+<tr class="bg-gray-50/50">
+    <td colspan="4" class="px-4 py-3 border-b border-gray-100">
+        <div class="ml-2 pl-3 border-l-2 border-indigo-300">
+            <span class="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Alokasi Stok Gudang:</span>
+            <ul class="mt-1 space-y-1">
+                @foreach($riwayatBatch[$det->id_material] as $batch)
+                <li class="text-xs text-gray-600 font-medium">
+                    <span class="inline-block w-2 h-2 bg-indigo-400 rounded-full mr-1"></span>
+                    ID Stok <strong class="text-gray-800">#{{ $batch['id_stok'] }}</strong> 
+                    <span class="text-gray-400">(Tgl Masuk: {{ $batch['tanggal_masuk'] ? \Carbon\Carbon::parse($batch['tanggal_masuk'])->format('d M Y') : '-' }})</span> 
+                    &rarr; Diambil: <strong class="text-emerald-600">{{ $batch['jumlah_diambil'] }} unit</strong>
+                </li>
+                @endforeach
+            </ul>
+        </div>
+    </td>
+</tr>
+@endif
                         @endforeach
                     </tbody>
                 </table>
             </div>
 
             <div class="px-6 py-4 bg-gray-50 border-t flex justify-end gap-3 rounded-b-3xl">
-                <button wire:click="closeModal" class="px-5 py-2.5 text-sm font-bold text-gray-600 hover:bg-gray-200 rounded-xl transition-colors">Batal</button>
+                <button wire:click="closeModal" class="px-5 py-2.5 text-sm font-bold text-gray-600 hover:bg-gray-200 rounded-xl transition-colors">Tutup</button>
                 
-                {{-- Tombol hanya muncul jika ada material yang jumlah_terkirim < jumlah_diminta --}}
                 @php
                     $masihAdaKurang = false;
                     foreach($detailBarang as $d) {
@@ -151,7 +171,7 @@
                     }
                 @endphp
 
-                @if($masihAdaKurang)
+                @if($masihAdaKurang && $permintaanTerpilih->status_permintaan != 'Selesai')
                 <button wire:click="prosesPemenuhanStok" wire:loading.attr="disabled" class="px-5 py-2.5 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-md flex items-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
                     <span wire:loading.remove wire:target="prosesPemenuhanStok">Proses Tarik Stok Gudang</span>
                     <span wire:loading wire:target="prosesPemenuhanStok">Memproses...</span>
