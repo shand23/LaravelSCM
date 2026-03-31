@@ -18,14 +18,15 @@ use App\Livewire\Logistik\PengajuanPembelian\PengajuanIndex as LogistikPengajuan
 use App\Livewire\Logistik\Penerimaan\PenerimaanIndex; 
 use App\Livewire\Logistik\PermintaanProyek\PermintaanProyekLogistikIndex; 
 
-// --- IMPORT COMPONENT PENGADAAN (RFQ, KONTRAK & PENGIRIMAN) ---
+// --- IMPORT COMPONENT PENGADAAN (RFQ, KONTRAK, PENGIRIMAN & INVOICE) ---
 use App\Livewire\Pengadaan\Pesanan\PesananIndex;
 use App\Livewire\Pengadaan\Kontrak\KontrakIndex;
 use App\Livewire\Pengadaan\Pengiriman\PengirimanIndex; 
+use App\Livewire\Pengadaan\Invoice\InvoiceIndex; // <--- Import baru untuk Invoice
 
 // --- IMPORT COMPONENT PELAKSANAAN ---
 use App\Livewire\Pelaksanaan\PenggunaanMaterial\PenggunaanIndex as PelaksanaanPenggunaanIndex; 
-use App\Livewire\Pelaksanaan\Penugasan\PenugasanProyekIndex; // <--- Import baru untuk Penugasan Proyek (Proyek Saya)
+use App\Livewire\Pelaksanaan\Penugasan\PenugasanProyekIndex;
 
 use Illuminate\Support\Facades\Route;
 
@@ -62,8 +63,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // ================= GRUP ROUTE TIM PELAKSANAAN =================
     Route::prefix('pelaksanaan')->name('pelaksanaan.')->group(function () {
         
-        // --- HALAMAN PROYEK SAYA (PENUGASAN) BARU ---
-        Route::get('/proyek-saya', PenugasanProyekIndex::class)->name('proyek-saya'); // <--- Route baru
+        // --- HALAMAN PROYEK SAYA (PENUGASAN) ---
+        Route::get('/proyek-saya', PenugasanProyekIndex::class)->name('proyek-saya'); 
         
         // Halaman request barang oleh pelaksana
         Route::get('/permintaan', IndexPermintaan::class)->name('permintaan');
@@ -102,6 +103,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         // --- PROSES PENGIRIMAN MATERIAL DARI SUPPLIER ---
         Route::get('/pengiriman', PengirimanIndex::class)->name('pengiriman'); 
+
+        // --- PROSES PENERIMAAN INVOICE DARI SUPPLIER ---
+        Route::get('/invoice', InvoiceIndex::class)->name('invoice'); // <--- Route baru untuk Invoice
     });
 
 });

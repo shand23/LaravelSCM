@@ -8,9 +8,10 @@ use Livewire\Attributes\Layout;
 use App\Models\Pengiriman;
 use App\Models\PengirimanDetail;
 use App\Models\Kontrak;
+use App\Models\InvoicePembelian; // <-- TAMBAHKAN INI
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Barryvdh\DomPDF\Facade\Pdf; // <-- IMPORT PDF DOMPDF
+use Barryvdh\DomPDF\Facade\Pdf;
 
 #[Layout('layouts.app')]
 class PengirimanIndex extends Component
@@ -135,7 +136,6 @@ class PengirimanIndex extends Component
         $this->isModalOpen = true;
     }
 
-    // --- FUNGSI BARU: LIHAT DETAIL RETUR (BUKTI RUSAK) ---
     public function lihatDetailRetur($id_pengiriman)
     {
         $this->infoDORetur = Pengiriman::find($id_pengiriman);
@@ -157,13 +157,10 @@ class PengirimanIndex extends Component
         $this->isModalDetailReturOpen = true;
     }
 
-    // --- FUNGSI UPDATE: CETAK BUKTI RETUR (PDF) ---
     public function cetakBuktiRetur($id_pengiriman)
     {
-        // 1. Ambil data Pengiriman (DO)
         $doRetur = Pengiriman::with('kontrak')->findOrFail($id_pengiriman);
 
-        // 2. Ambil data material yang rusak
         $dataDetailRetur = DB::table('detail_penerimaan')
             ->join('penerimaan_material', 'detail_penerimaan.id_penerimaan', '=', 'penerimaan_material.id_penerimaan')
             ->join('detail_kontrak', 'detail_penerimaan.id_detail_kontrak', '=', 'detail_kontrak.id_detail_kontrak')
@@ -174,22 +171,18 @@ class PengirimanIndex extends Component
                 'material.nama_material',
                 'detail_penerimaan.jumlah_rusak',
                 'detail_penerimaan.alasan_return',
-                'detail_penerimaan.foto_bukti_rusak' // <--- INI SUDAH DITAMBAHKAN
+                'detail_penerimaan.foto_bukti_rusak' 
             )
             ->get();
 
-        // 3. Generate Nama File
         $nomorDO = $doRetur->nomor_pengiriman ?? 'DO-' . $id_pengiriman;
         $namaFile = 'Bukti-Retur-' . str_replace('/', '-', $nomorDO) . '.pdf';
 
-        // 4. Load View khusus PDF
-        // Pastikan Anda membuat file: resources/views/livewire/pengadaan/pengiriman/pdf-retur.blade.php
         $pdf = Pdf::loadView('livewire.pengadaan.pengiriman.pdf-retur', [
             'doRetur' => $doRetur,
             'dataDetailRetur' => $dataDetailRetur
         ]);
 
-        // 5. Download Stream via Livewire
         return response()->streamDownload(function () use ($pdf) {
             echo $pdf->stream();
         }, $namaFile);
@@ -201,7 +194,6 @@ class PengirimanIndex extends Component
         $this->dataDetailRetur = [];
         $this->infoDORetur = null;
     }
-    // -----------------------------------------------------
 
     public function prosesRetur($id_pengiriman)
     {
@@ -400,7 +392,14 @@ class PengirimanIndex extends Component
 
     public function render()
     {
+        // 1. Ambil ID Kontrak yang status invoice-nya sudah memenuhi syarat
+        $validKontrakIds = InvoicePembelian::whereIn('status_invoice', ['Dibayar Sebagian', 'Lunas'])
+            ->pluck('id_kontrak')
+            ->toArray();
+
+        // 2. Tambahkan whereIn id_kontrak pada query rawKontrak
         $rawKontrak = Kontrak::whereIn('status_kontrak', ['Disepakati', 'Pengiriman', 'Dikirim Sebagian'])
+            ->whereIn('id_kontrak', $validKontrakIds)
             ->with('detailKontrak')
             ->get();
         

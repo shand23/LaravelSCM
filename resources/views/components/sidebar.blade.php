@@ -190,58 +190,70 @@
                 </a>
 
             @endif      
-       {{-- ================= TIM PENGADAAN MENU ================= --}}
-@if(auth()->user()->ROLE === 'Tim Pengadaan')
-    
-    <div class="mt-6 mb-2 px-4">
-        <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Pengadaan & Pembelian</p>
-    </div>
+     {{-- ================= TIM PENGADAAN MENU ================= --}}
+    @if(auth()->user()->ROLE === 'Tim Pengadaan')
+        
+        <div class="mt-6 mb-2 px-4">
+            <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Pengadaan & Pembelian</p>
+        </div>
 
-    {{-- Menu Data Supplier --}}
-    <a href="{{ route('pengadaan.supplier') }}" 
-       class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group mb-1
-       {{ request()->routeIs('pengadaan.supplier') 
-          ? 'bg-purple-600 text-white shadow-lg shadow-purple-900/40 translate-x-1' 
-          : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
-        <svg class="w-5 h-5 {{ request()->routeIs('pengadaan.supplier') ? 'text-white' : 'text-gray-500 group-hover:text-purple-400' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
-        <span class="font-medium text-sm">Data Supplier</span>
-    </a>
+        {{-- Menu Data Supplier --}}
+        <a href="{{ route('pengadaan.supplier') }}" 
+           class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group mb-1
+           {{ request()->routeIs('pengadaan.supplier') 
+              ? 'bg-purple-600 text-white shadow-lg shadow-purple-900/40 translate-x-1' 
+              : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
+            <svg class="w-5 h-5 {{ request()->routeIs('pengadaan.supplier') ? 'text-white' : 'text-gray-500 group-hover:text-purple-400' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+            <span class="font-medium text-sm">Data Supplier</span>
+        </a>
 
-    {{-- Menu Pesanan (RFQ) --}}
-    <a href="{{ route('pengadaan.pesanan') }}" 
-       class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group mb-1
-       {{ request()->routeIs('pengadaan.pesanan') 
-          ? 'bg-purple-600 text-white shadow-lg shadow-purple-900/40 translate-x-1' 
-          : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
-        <svg class="w-5 h-5 {{ request()->routeIs('pengadaan.pesanan') ? 'text-white' : 'text-gray-500 group-hover:text-purple-400' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-        <span class="font-medium text-sm">Pesanan (RFQ)</span>
-    </a>
+        {{-- Menu Pesanan (RFQ) --}}
+        <a href="{{ route('pengadaan.pesanan') }}" 
+           class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group mb-1
+           {{ request()->routeIs('pengadaan.pesanan') 
+              ? 'bg-purple-600 text-white shadow-lg shadow-purple-900/40 translate-x-1' 
+              : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
+            <svg class="w-5 h-5 {{ request()->routeIs('pengadaan.pesanan') ? 'text-white' : 'text-gray-500 group-hover:text-purple-400' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+            <span class="font-medium text-sm">Pesanan (RFQ)</span>
+        </a>
 
-    {{-- Menu Kontrak & PO --}}
-    <a href="{{ route('pengadaan.kontrak') }}" 
-       class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group mb-1
-       {{ request()->routeIs('pengadaan.kontrak') 
-          ? 'bg-purple-600 text-white shadow-lg shadow-purple-900/40 translate-x-1' 
-          : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
-        <svg class="w-5 h-5 {{ request()->routeIs('pengadaan.kontrak') ? 'text-white' : 'text-gray-500 group-hover:text-purple-400' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
-        </svg>
-        <span class="font-medium text-sm">Kontrak & PO</span>
-    </a>
+        {{-- Menu Kontrak & PO --}}
+        <a href="{{ route('pengadaan.kontrak') }}" 
+           class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group mb-1
+           {{ request()->routeIs('pengadaan.kontrak') 
+              ? 'bg-purple-600 text-white shadow-lg shadow-purple-900/40 translate-x-1' 
+              : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
+            <svg class="w-5 h-5 {{ request()->routeIs('pengadaan.kontrak') ? 'text-white' : 'text-gray-500 group-hover:text-purple-400' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
+            </svg>
+            <span class="font-medium text-sm">Kontrak & PO</span>
+        </a>
 
-    {{-- Menu Pengiriman Material (TAMBAHAN BARU) --}}
-    <a href="{{ route('pengadaan.pengiriman') }}" 
-       class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group mb-1
-       {{ request()->routeIs('pengadaan.pengiriman') 
-          ? 'bg-purple-600 text-white shadow-lg shadow-purple-900/40 translate-x-1' 
-          : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
-        <svg class="w-5 h-5 {{ request()->routeIs('pengadaan.pengiriman') ? 'text-white' : 'text-gray-500 group-hover:text-purple-400' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
-        </svg>
-        <span class="font-medium text-sm">Pengiriman Ekspedisi</span>
-    </a>
+        {{-- Menu Pengiriman Material --}}
+        <a href="{{ route('pengadaan.pengiriman') }}" 
+           class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group mb-1
+           {{ request()->routeIs('pengadaan.pengiriman') 
+              ? 'bg-purple-600 text-white shadow-lg shadow-purple-900/40 translate-x-1' 
+              : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
+            <svg class="w-5 h-5 {{ request()->routeIs('pengadaan.pengiriman') ? 'text-white' : 'text-gray-500 group-hover:text-purple-400' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+            </svg>
+            <span class="font-medium text-sm">Pengiriman Ekspedisi</span>
+        </a>
 
-@endif
+        {{-- Menu Invoice Pembelian (TAMBAHAN BARU) --}}
+        <a href="{{ route('pengadaan.invoice') }}" 
+           class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group mb-1
+           {{ request()->routeIs('pengadaan.invoice') 
+              ? 'bg-purple-600 text-white shadow-lg shadow-purple-900/40 translate-x-1' 
+              : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
+            <svg class="w-5 h-5 {{ request()->routeIs('pengadaan.invoice') ? 'text-white' : 'text-gray-500 group-hover:text-purple-400' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14l6-6m-5.5.5h.01m4.99 5.5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2zM10 8.5a.5.5 0 11-1 0 .5.5 0 011 0zm5 5a.5.5 0 11-1 0 .5.5 0 011 0z"></path>
+            </svg>
+            <span class="font-medium text-sm">Invoice Pembelian</span>
+        </a>
+
+    @endif
 
     </nav>
 
