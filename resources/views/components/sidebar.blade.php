@@ -117,7 +117,7 @@
             </a>
 
         @endif
-      {{-- ================= LOGISTIK MENU ================= --}}
+    {{-- ================= LOGISTIK MENU ================= --}}
             @if(auth()->user()->ROLE === 'Logistik')
                 
                 <div class="mt-6 mb-2 px-4">
@@ -179,7 +179,17 @@
                     <span class="font-medium text-sm">Monitor Stok</span>
                 </a>
 
-                {{-- --- MENU BARU: PERMINTAAN PROYEK --- --}}
+                {{-- --- MENU BARU: RIWAYAT PENYESUAIAN --- --}}
+                <a href="{{ route('logistik.penyesuaian') }}" 
+                   class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group mb-1
+                   {{ request()->routeIs('logistik.penyesuaian') 
+                      ? 'bg-purple-600 text-white shadow-lg shadow-purple-900/40 translate-x-1' 
+                      : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
+                    <svg class="w-5 h-5 {{ request()->routeIs('logistik.penyesuaian') ? 'text-white' : 'text-gray-500 group-hover:text-purple-400' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    <span class="font-medium text-sm">Riwayat Penyesuaian</span>
+                </a>
+
+                {{-- --- PERMINTAAN PROYEK --- --}}
                 <a href="{{ route('logistik.permintaan-proyek') }}" 
                    class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group mb-1
                    {{ request()->routeIs('logistik.permintaan-proyek') 
@@ -189,7 +199,7 @@
                     <span class="font-medium text-sm">Permintaan Proyek</span>
                 </a>
 
-            @endif      
+            @endif 
      {{-- ================= TIM PENGADAAN MENU ================= --}}
     @if(auth()->user()->ROLE === 'Tim Pengadaan')
         

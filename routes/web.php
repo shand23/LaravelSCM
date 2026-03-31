@@ -11,6 +11,9 @@ use App\Livewire\Pengadaan\Supplier\SupplierIndex;
 use App\Livewire\Manajemen\Approval\ApprovalIndex; 
 use App\Livewire\Logistik\Stok\StokIndex;
 
+// --- IMPORT COMPONENT BARU: PENYESUAIAN STOK ---
+use App\Livewire\Logistik\Stok\PenyesuaianIndex;
+
 // Pengajuan Pembelian (PR)
 use App\Livewire\Logistik\PengajuanPembelian\PengajuanIndex as LogistikPengajuanIndex;
 
@@ -86,6 +89,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         // --- PROSES MONITORING STOK ---
         Route::get('/stok', StokIndex::class)->name('stok');
+
+        // --- RIWAYAT PENYESUAIAN STOK (BARU) ---
+        Route::get('/stok/penyesuaian', PenyesuaianIndex::class)->name('penyesuaian');
 
         // --- PROSES PEMENUHAN PERMINTAAN PROYEK ---
         Route::get('/permintaan-proyek', PermintaanProyekLogistikIndex::class)->name('permintaan-proyek'); 
