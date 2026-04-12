@@ -83,6 +83,24 @@
                             <button wire:click="show('{{ $p->id_permintaan }}')" class="text-indigo-600 hover:text-indigo-900 bg-indigo-50 px-3 py-1 rounded-md border border-indigo-200 inline-block mx-1">
                                 Detail
                             </button>
+
+                           
+    {{-- --- TOMBOL BARU: BUAT LAPORAN --- --}}
+    @if(in_array($p->status_permintaan, ['Diproses Sebagian', 'Selesai']))
+        @if(!in_array($p->id_permintaan, $usedPermintaanIds))
+            <a href="{{ route('pelaksanaan.penggunaan', ['id_permintaan' => $p->id_permintaan]) }}" 
+               class="bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1 rounded text-xs font-bold transition-colors">
+                Buat Laporan
+            </a>
+        @else
+            <span class="bg-gray-100 text-gray-500 px-3 py-1 rounded text-xs font-bold border border-gray-200">
+                Sudah Dilaporkan
+            </span>
+        @endif
+    @endif
+</td>
+
+                            
                             
                             {{-- LOGIKA TOMBOL EDIT & DELETE MUNCUL JIKA STATUS MASIH MENUNGGU PERSETUJUAN --}}
                             @if($p->status_permintaan === 'Menunggu Persetujuan')

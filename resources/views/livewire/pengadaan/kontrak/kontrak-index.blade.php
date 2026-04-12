@@ -217,10 +217,27 @@
                                 <label class="text-xs font-bold text-gray-600 uppercase tracking-wider">Ongkos Kirim (+)</label>
                                 <input type="number" wire:model.live="total_ongkir" min="0" class="w-32 border-gray-300 rounded-md py-1.5 text-right font-medium focus:ring-blue-500 text-sm">
                             </div>
-                            <div class="flex justify-between items-center">
-                                <label class="text-xs font-bold text-gray-600 uppercase tracking-wider">Pajak PPN (+)</label>
-                                <input type="number" wire:model.live="total_ppn" min="0" class="w-32 border-gray-300 rounded-md py-1.5 text-right font-medium focus:ring-blue-500 text-sm">
-                            </div>
+                           <div>
+        <label class="text-xs text-gray-500 font-bold mb-1 block">Pajak (PPN %)</label>
+       <div class="flex items-center gap-2">
+            {{-- Kotak input dikunci (readonly) dan warnanya abu-abu --}}
+            <input type="text" readonly value="11%" 
+                   class="w-16 bg-gray-100 border-gray-300 rounded-md shadow-sm text-sm p-2 text-center font-bold text-gray-600 cursor-not-allowed" 
+                   title="Tarif PPN dikunci pada 11%">
+            
+            {{-- Field Nominal (Read-only / Otomatis) --}}
+            <div class="relative w-full">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <span class="text-gray-500 sm:text-sm font-bold">Rp</span>
+                </div>
+                <input type="text" readonly 
+                       value="{{ number_format($total_ppn, 0, ',', '.') }}" 
+                       class="w-full pl-10 pr-3 bg-gray-100 border-gray-300 rounded-md shadow-sm text-sm p-2 font-bold text-indigo-600 cursor-not-allowed"
+                       title="Dihitung otomatis (PPN % x DPP)">
+            </div>
+        </div>
+        <span class="text-[10px] text-gray-400 mt-1 block">*Nominal pajak dihitung dari subtotal setelah diskon (DPP)</span>
+    </div>
                         </div>
 
                         {{-- Total Grand Final --}}

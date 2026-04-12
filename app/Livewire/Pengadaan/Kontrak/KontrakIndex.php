@@ -30,6 +30,8 @@ class KontrakIndex extends Component
     public $nominal_diskon = 0;
     public $total_ongkir = 0;
     public $total_ppn = 0;
+    public $ppn_persen = 11; // Untuk menampung input misal: 11 atau 12
+    public $dpp_nilai = 0;  // Dasar Pengenaan Pajak
     public $total_nilai_kontrak = 0;
     public $items = [];
 
@@ -59,7 +61,7 @@ class KontrakIndex extends Component
         $this->hitungTotal();
     }
 
-    public function hitungTotal() {
+   public function hitungTotal() {
         $this->total_harga_negosiasi = 0;
         foreach ($this->items as $index => $item) {
             $qty = max(0, floatval($item['jumlah_final'] ?? 0));
@@ -68,15 +70,26 @@ class KontrakIndex extends Component
             $this->items[$index]['subtotal'] = $subtotal;
             $this->total_harga_negosiasi += $subtotal;
         }
+        
         $persen = min(100, max(0, floatval($this->diskon_persen ?: 0)));
         $this->nominal_diskon = ($persen / 100) * $this->total_harga_negosiasi;
-        $this->total_nilai_kontrak = ($this->total_harga_negosiasi - $this->nominal_diskon) + max(0, $this->total_ongkir) + max(0, $this->total_ppn);
-    }
+        
+        // --- LOGIKA BARU PPN & DPP ---
+        // 1. Dapatkan Nilai DPP (Subtotal - Diskon)
+        $this->dpp_nilai = $this->total_harga_negosiasi - $this->nominal_diskon;
+        
+        // 2. Hitung Nominal PPN dari Persentase
+        $ppn_rate = min(100, max(0, floatval($this->ppn_persen ?: 0)));
+        $this->total_ppn = ($ppn_rate / 100) * $this->dpp_nilai;
 
+        // 3. Grand Total Akhir
+        $this->total_nilai_kontrak = $this->dpp_nilai + max(0, $this->total_ongkir) + $this->total_ppn;
+        // -----------------------------
+    }
     public function updatedItems() { $this->hitungTotal(); }
     public function updatedDiskonPersen() { $this->hitungTotal(); }
     public function updatedTotalOngkir() { $this->hitungTotal(); }
-    public function updatedTotalPpn() { $this->hitungTotal(); }
+   public function updatedPpnPersen() { $this->hitungTotal(); }
 
     public function create() {
         $this->resetForm();
@@ -95,8 +108,12 @@ class KontrakIndex extends Component
         $this->total_ongkir = $kontrak->total_ongkir;
         $this->total_ppn = $kontrak->total_ppn;
         
-        if($kontrak->total_harga_negosiasi > 0) {
-            $this->diskon_persen = ($kontrak->total_diskon / $kontrak->total_harga_negosiasi) * 100;
+      $dpp = $kontrak->total_harga_negosiasi - $kontrak->nominal_diskon;
+        if($dpp > 0) {
+            // Menghitung balik persen dari nominal yang tersimpan di DB
+            $this->ppn_persen = round(($kontrak->total_ppn / $dpp) * 100); 
+        } else {
+            $this->ppn_persen = 0;
         }
 
         foreach ($kontrak->detailKontrak as $detail) {
@@ -220,6 +237,7 @@ class KontrakIndex extends Component
     private function resetForm() {
         $this->reset(['id_pesanan', 'id_supplier', 'nama_supplier_text', 'items', 'diskon_persen', 'nominal_diskon', 'total_ongkir', 'total_ppn', 'selected_id']);
         $this->tanggal_kontrak = date('Y-m-d');
+        $this->ppn_persen = 11;
     }
 
     public function closeModal() { $this->isModalOpen = false; }

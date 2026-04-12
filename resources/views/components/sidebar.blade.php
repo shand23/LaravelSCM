@@ -70,7 +70,7 @@
                 <span class="font-medium text-sm">Penugasan Tim</span>
             </a>
 
-            {{-- --- MENU APPROVAL BARU --- --}}
+            {{-- --- MENU APPROVAL --- --}}
             <a href="{{ route('manajemen.approval') }}" 
                class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group mb-1
                {{ request()->routeIs('manajemen.approval') 
@@ -89,34 +89,44 @@
                 <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Pekerjaan</p>
             </div>
              
-         {{-- Menu Proyek Saya (HALAMAN BARU) --}}
-    <a href="{{ route('pelaksanaan.proyek-saya') }}" 
-        class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group mb-1 {{ request()->routeIs('pelaksanaan.proyek-saya*') ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/50' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
-        <svg class="w-5 h-5 {{ request()->routeIs('pelaksanaan.proyek-saya*') ? 'text-white' : 'text-gray-500 group-hover:text-blue-400' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
-        </svg>
-        <span class="font-medium text-sm">Proyek Saya</span>
-    </a>
+            {{-- Menu Proyek Saya --}}
+            <a href="{{ route('pelaksanaan.proyek-saya') }}" 
+               class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group mb-1 
+               {{ request()->routeIs('pelaksanaan.proyek-saya*') 
+                  ? 'bg-purple-600 text-white shadow-lg shadow-purple-900/40 translate-x-1' 
+                  : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
+                <svg class="w-5 h-5 {{ request()->routeIs('pelaksanaan.proyek-saya*') ? 'text-white' : 'text-gray-500 group-hover:text-purple-400' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                </svg>
+                <span class="font-medium text-sm">Proyek Saya</span>
+            </a>
 
             {{-- Menu Permintaan Material --}}
             <a href="{{ route('pelaksanaan.permintaan') }}" 
-               class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group mb-1 {{ request()->routeIs('pelaksanaan.permintaan*') ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/50' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
-                <svg class="w-5 h-5 {{ request()->routeIs('pelaksanaan.permintaan*') ? 'text-white' : 'text-gray-500 group-hover:text-indigo-400' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+               class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group mb-1 
+               {{ request()->routeIs('pelaksanaan.permintaan*') 
+                  ? 'bg-purple-600 text-white shadow-lg shadow-purple-900/40 translate-x-1' 
+                  : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
+                <svg class="w-5 h-5 {{ request()->routeIs('pelaksanaan.permintaan*') ? 'text-white' : 'text-gray-500 group-hover:text-purple-400' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                 </svg>
                 <span class="font-medium text-sm">Permintaan Material</span>
             </a>
 
-            {{-- Menu Laporan Penggunaan (HALAMAN BARU) --}}
+            {{-- Menu Laporan Penggunaan --}}
             <a href="{{ route('pelaksanaan.penggunaan') }}" 
-               class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group mb-1 {{ request()->routeIs('pelaksanaan.penggunaan*') ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/50' : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
-                <svg class="w-5 h-5 {{ request()->routeIs('pelaksanaan.penggunaan*') ? 'text-white' : 'text-gray-500 group-hover:text-emerald-400' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+               class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group mb-1 
+               {{ request()->routeIs('pelaksanaan.penggunaan*') 
+                  ? 'bg-purple-600 text-white shadow-lg shadow-purple-900/40 translate-x-1' 
+                  : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
+                <svg class="w-5 h-5 {{ request()->routeIs('pelaksanaan.penggunaan*') ? 'text-white' : 'text-gray-500 group-hover:text-purple-400' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
                 </svg>
                 <span class="font-medium text-sm">Laporan Penggunaan</span>
             </a>
 
         @endif
+
     {{-- ================= LOGISTIK MENU ================= --}}
             @if(auth()->user()->ROLE === 'Logistik')
                 
@@ -200,6 +210,7 @@
                 </a>
 
             @endif 
+
      {{-- ================= TIM PENGADAAN MENU ================= --}}
     @if(auth()->user()->ROLE === 'Tim Pengadaan')
         
@@ -239,6 +250,19 @@
             <span class="font-medium text-sm">Kontrak & PO</span>
         </a>
 
+
+        {{-- Menu Invoice Pembelian --}}
+        <a href="{{ route('pengadaan.invoice') }}" 
+           class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group mb-1
+           {{ request()->routeIs('pengadaan.invoice') 
+              ? 'bg-purple-600 text-white shadow-lg shadow-purple-900/40 translate-x-1' 
+              : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
+            <svg class="w-5 h-5 {{ request()->routeIs('pengadaan.invoice') ? 'text-white' : 'text-gray-500 group-hover:text-purple-400' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14l6-6m-5.5.5h.01m4.99 5.5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2zM10 8.5a.5.5 0 11-1 0 .5.5 0 011 0zm5 5a.5.5 0 11-1 0 .5.5 0 011 0z"></path>
+            </svg>
+            <span class="font-medium text-sm">Invoice Pembelian</span>
+        </a>
+
         {{-- Menu Pengiriman Material --}}
         <a href="{{ route('pengadaan.pengiriman') }}" 
            class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group mb-1
@@ -249,18 +273,6 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
             </svg>
             <span class="font-medium text-sm">Pengiriman Ekspedisi</span>
-        </a>
-
-        {{-- Menu Invoice Pembelian (TAMBAHAN BARU) --}}
-        <a href="{{ route('pengadaan.invoice') }}" 
-           class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group mb-1
-           {{ request()->routeIs('pengadaan.invoice') 
-              ? 'bg-purple-600 text-white shadow-lg shadow-purple-900/40 translate-x-1' 
-              : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
-            <svg class="w-5 h-5 {{ request()->routeIs('pengadaan.invoice') ? 'text-white' : 'text-gray-500 group-hover:text-purple-400' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14l6-6m-5.5.5h.01m4.99 5.5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2zM10 8.5a.5.5 0 11-1 0 .5.5 0 011 0zm5 5a.5.5 0 11-1 0 .5.5 0 011 0z"></path>
-            </svg>
-            <span class="font-medium text-sm">Invoice Pembelian</span>
         </a>
 
     @endif

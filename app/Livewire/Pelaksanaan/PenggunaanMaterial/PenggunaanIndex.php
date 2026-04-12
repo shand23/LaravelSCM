@@ -32,10 +32,17 @@ class PenggunaanIndex extends Component
     public $laporanTerpilih = null;
     public $detailItems = [];
 
-    public function mount()
-    {
-        $this->tanggal_laporan = date('Y-m-d');
+ public function mount($id_permintaan = null) // Tambahkan parameter $id_permintaan
+{
+    $this->tanggal_laporan = date('Y-m-d');
+
+    // Jika datang dari link "Buat Laporan" di halaman Permintaan
+    if ($id_permintaan) {
+        $this->id_permintaan_selected = $id_permintaan;
+        $this->updatedIdPermintaanSelected($id_permintaan); // Isi detail barang otomatis
+        $this->isModalOpen = true; // Langsung buka modal input
     }
+}
 
     public function updatingSearch()
     {

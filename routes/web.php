@@ -73,7 +73,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/permintaan', IndexPermintaan::class)->name('permintaan');
 
         // --- LAPORAN PENGGUNAAN MATERIAL ---
-        Route::get('/penggunaan', PelaksanaanPenggunaanIndex::class)->name('penggunaan'); 
+        Route::get('/penggunaan/{id_permintaan?}', PelaksanaanPenggunaanIndex::class)->name('penggunaan');
     });
 
     // ================= GRUP ROUTE LOGISTIK =================

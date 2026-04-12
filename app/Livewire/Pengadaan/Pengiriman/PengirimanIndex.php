@@ -45,72 +45,117 @@ class PengirimanIndex extends Component
         $this->loadDataPO($this->id_kontrak);
     }
 
-    private function loadDataPO($id_kontrak)
+   private function loadDataPO($id_kontrak)
     {
-        $this->jadwals = []; 
-        $this->listMaterialPO = []; 
+        $this->listMaterialPO = [];
+        $this->jadwals = [];
 
-        if ($id_kontrak) {
-            $kontrak = Kontrak::with('detailKontrak.material')->find($id_kontrak);
-            $this->min_tanggal_berangkat = $kontrak ? $kontrak->tanggal_kontrak : null;
+        if (!$id_kontrak) return;
 
-            if ($kontrak && $kontrak->detailKontrak) {
-                foreach ($kontrak->detailKontrak as $detail) {
-                    $idReal = $detail->id_detail_kontrak; 
-                    if (!$idReal) continue;
+        $kontrak = Kontrak::with('detailKontrak.material')->find($id_kontrak);
+        if ($kontrak) {
+            foreach ($kontrak->detailKontrak as $detail) {
+                // Hitung jumlah yang sudah masuk ke proses pengiriman
+                $sudahDikirim = PengirimanDetail::whereHas('pengiriman', function($q) use ($id_kontrak) {
+                                    $q->where('id_kontrak', $id_kontrak);
+                                })
+                                ->where('id_detail_kontrak', $detail->id_detail_kontrak)
+                                ->sum('jumlah_dikirim');
+                
+                // Cek jika ada retur rusak yang perlu dikirim ulang
+                $jumlahRusak = DB::table('detail_penerimaan')
+                    ->join('penerimaan_material', 'detail_penerimaan.id_penerimaan', '=', 'penerimaan_material.id_penerimaan')
+                    ->join('pengiriman', 'penerimaan_material.id_pengiriman', '=', 'pengiriman.id_pengiriman')
+                    ->where('pengiriman.id_kontrak', $id_kontrak)
+                    ->where('detail_penerimaan.id_detail_kontrak', $detail->id_detail_kontrak)
+                    ->sum('detail_penerimaan.jumlah_rusak');
 
-                    $sudahDikirimQuery = PengirimanDetail::whereHas('pengiriman', function($q) use ($id_kontrak) {
-                        $q->where('id_kontrak', $id_kontrak);
-                    })->where('id_detail_kontrak', $idReal);
+                // Sisa kebutuhan = Final PO - (Yang sudah dikirim - Yang Rusak)
+                $sisa = $detail->jumlah_final - ($sudahDikirim - $jumlahRusak);
 
-                    if ($this->edit_id) {
-                        $sudahDikirimQuery->where('id_pengiriman', '!=', $this->edit_id);
-                    }
-                    $sudahDikirim = $sudahDikirimQuery->sum('jumlah_dikirim');
-
-                    $jumlahRusak = DB::table('detail_penerimaan')
-                        ->join('penerimaan_material', 'detail_penerimaan.id_penerimaan', '=', 'penerimaan_material.id_penerimaan')
-                        ->join('pengiriman', 'penerimaan_material.id_pengiriman', '=', 'pengiriman.id_pengiriman')
-                        ->where('pengiriman.id_kontrak', $id_kontrak)
-                        ->where('detail_penerimaan.id_detail_kontrak', $idReal)
-                        ->sum('detail_penerimaan.jumlah_rusak');
-
-                    $sisaKebutuhan = $detail->jumlah_final - ($sudahDikirim - $jumlahRusak);
-
-                    $this->listMaterialPO[$idReal] = [
-                        'id_detail_kontrak' => $idReal,
-                        'nama_material' => $detail->material->nama_material ?? 'Material Unknown',
-                        'sisa_kebutuhan' => $sisaKebutuhan > 0 ? $sisaKebutuhan : 0,
+                if ($sisa > 0) {
+                    $this->listMaterialPO[] = [
+                        'id_material' => $detail->id_material,
+                        'id_detail_kontrak' => $detail->id_detail_kontrak,
+                        'nama_material' => $detail->material->nama_material,
+                        'satuan' => $detail->material->satuan ?? 'Unit',
+                        'sisa_kebutuhan' => $sisa
                     ];
                 }
-                
-                if (!$this->edit_id && !$this->id_do_retur) {
-                    $this->addJadwal();
-                }
+            }
+
+            // Inisialisasi Jadwal Truk Ke-1 (Otomatis Full Kuota Sisa)
+            $this->jadwals = [[
+                'tanggal_berangkat' => '',
+                'estimasi_tanggal_tiba' => '',
+                'nama_supir' => '',
+                'plat_kendaraan' => '',
+                'items' => []
+            ]];
+
+            foreach ($this->listMaterialPO as $mat) {
+                // Baik "Sekaligus" maupun "Bertahap", default awal selalu sisa kebutuhan penuh
+                $this->jadwals[0]['items'][$mat['id_material']] = $mat['sisa_kebutuhan'];
             }
         }
     }
 
-    public function addJadwal()
+   public function addJadwal()
     {
-        $details = [];
+        $newItem = [];
         
-        if ($this->tipe_pengiriman == 'Sekaligus') {
-            foreach ($this->listMaterialPO as $id => $item) {
-                if ($item['sisa_kebutuhan'] > 0) {
-                    $details[] = ['id_detail_kontrak' => $id, 'qty' => $item['sisa_kebutuhan']];
-                }
+        // Logika Pintar: Otomatis menghitung sisa dari truk-truk sebelumnya
+        foreach ($this->listMaterialPO as $mat) {
+            $dialokasikan = 0;
+            foreach ($this->jadwals as $jadwal) {
+                $dialokasikan += (int)($jadwal['items'][$mat['id_material']] ?? 0);
             }
-        } else {
-            $details[] = ['id_detail_kontrak' => '', 'qty' => 0];
+            // Sisa untuk truk baru adalah Total Kebutuhan - Yang sudah ditaruh di truk lain
+            $sisa = max(0, $mat['sisa_kebutuhan'] - $dialokasikan);
+            $newItem[$mat['id_material']] = $sisa;
         }
 
         $this->jadwals[] = [
-            'tanggal_berangkat' => date('Y-m-d'),
-            'estimasi_tanggal_tiba' => date('Y-m-d', strtotime('+1 day')),
-            'keterangan' => $this->tipe_pengiriman == 'Retur' ? '[RETUR]' : '',
-            'details' => count($details) > 0 ? $details : [['id_detail_kontrak' => '', 'qty' => 0]]
+            'tanggal_berangkat' => '',
+            'estimasi_tanggal_tiba' => '',
+            'nama_supir' => '',
+            'plat_kendaraan' => '',
+            'items' => $newItem
         ];
+    }
+
+    // --- FUNGSI BARU: AUTO-KOREKSI INPUT JUMLAH AGAR TIDAK LEBIH DARI PO ---
+    public function updated($propertyName)
+    {
+        // Deteksi jika yang diubah adalah input jumlah material di dalam truk/jadwal tertentu
+        if (preg_match('/^jadwals\.(\d+)\.items\.(.+)$/', $propertyName, $matches)) {
+            $index = $matches[1];
+            $id_material = $matches[2];
+
+            $matInfo = collect($this->listMaterialPO)->firstWhere('id_material', $id_material);
+            
+            if ($matInfo) {
+                $sisaKebutuhan = $matInfo['sisa_kebutuhan'];
+                $alokasiTrukLain = 0;
+                
+                // Hitung total material yang sudah dialokasikan di truk LAIN (bukan truk yang sedang diketik)
+                foreach ($this->jadwals as $idx => $jadwal) {
+                    if ($idx != $index) {
+                        $alokasiTrukLain += (int)($jadwal['items'][$id_material] ?? 0);
+                    }
+                }
+
+                $maxTersedia = max(0, $sisaKebutuhan - $alokasiTrukLain);
+                $nilaiDiketik = (int)$this->jadwals[$index]['items'][$id_material];
+
+                // Jika mengetik lebih dari sisa yang ada, paksa kembali ke batas maksimal
+                if ($nilaiDiketik > $maxTersedia) {
+                    $this->jadwals[$index]['items'][$id_material] = $maxTersedia;
+                } elseif ($nilaiDiketik < 0) {
+                    $this->jadwals[$index]['items'][$id_material] = 0;
+                }
+            }
+        }
     }
 
     public function removeJadwal($index)

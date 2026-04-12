@@ -194,6 +194,14 @@
                 @if($id_kontrak && count($listMaterialPO) > 0)
                 <div class="mb-2 flex justify-between items-end border-b border-gray-200 pb-2">
                     <h3 class="text-sm font-bold text-gray-700 uppercase tracking-widest">Penjadwalan & Armada</h3>
+                    
+                    {{-- TOMBOL TAMBAH TRUK (Hanya muncul jika tipe pengiriman Bertahap) --}}
+                    @if($tipe_pengiriman == 'Bertahap' && !$edit_id && !$id_do_retur)
+                        <button wire:click="addJadwal" type="button" class="bg-blue-100 text-blue-700 hover:bg-blue-600 hover:text-white px-3 py-1.5 rounded-md text-xs font-bold transition flex items-center gap-1 shadow-sm">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                            Tambah Jadwal / Truk
+                        </button>
+                    @endif
                 </div>
 
                 <div class="space-y-6 mt-4 mb-4">
@@ -230,39 +238,45 @@
                         <div class="bg-blue-50/30 p-5 border-t border-gray-100">
                             <div class="flex justify-between items-center mb-4">
                                 <p class="text-xs font-bold text-blue-800 uppercase tracking-wider">Muatan Material</p>
-                                @if(!$id_do_retur)
-                                <button wire:click="addMaterialToJadwal({{ $index }})" type="button" class="text-xs bg-white text-blue-600 border border-blue-200 font-bold px-3 py-1.5 rounded-md hover:bg-blue-50 shadow-sm transition">
-                                    + Tambah Item
-                                </button>
-                                @endif
                             </div>
                             
                             <div class="space-y-3">
-                                @foreach($jadwal['details'] as $detIndex => $detail)
-                                <div wire:key="truk-{{ $index }}-det-{{ $detIndex }}" class="flex gap-4 items-end bg-white p-3.5 rounded-lg border border-gray-200 shadow-sm">
-                                    <div class="flex-1">
-                                        <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">Pilih Material (Sisa PO)</label>
-                                        <select wire:model.blur="jadwals.{{ $index }}.details.{{ $detIndex }}.id_detail_kontrak" class="w-full border-gray-300 rounded-md shadow-sm border px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500 {{ $id_do_retur ? 'bg-gray-100 pointer-events-none' : '' }}">
-                                            <option value="">-- Pilih Material --</option>
-                                            @foreach($listMaterialPO as $idMat => $item)
-                                                <option value="{{ $idMat }}">
-                                                    {{ $item['nama_material'] }} (Maks Kuota: {{ $item['sisa_kebutuhan'] }})
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                    <div class="w-32">
-                                        <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1 text-center">Jumlah</label>
-                                        <input type="number" wire:model.blur="jadwals.{{ $index }}.details.{{ $detIndex }}.qty" min="0" oninput="this.value = Math.abs(this.value)" class="w-full border-gray-300 rounded-md shadow-sm border px-3 py-2 text-sm font-bold text-center focus:ring-blue-500 focus:border-blue-500">
-                                    </div>
+                                @foreach($listMaterialPO as $mat)
+                                @php
+                                    // --- LOGIKA HITUNG SISA REAL-TIME ---
+                                    $id_mat = $mat['id_material'];
+                                    $totalDialokasikan = 0;
                                     
-                                    @if(count($jadwal['details']) > 1 && !$id_do_retur)
-                                    <div>
-                                        <button wire:click="removeMaterialFromJadwal({{ $index }}, {{ $detIndex }})" type="button" class="text-red-400 hover:text-red-600 p-2.5 bg-red-50 hover:bg-red-100 rounded-md transition" title="Hapus baris ini">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                                        </button>
+                                    // Hitung total input qty dari semua truk untuk material ini
+                                    foreach($jadwals as $j) {
+                                        $totalDialokasikan += (int)($j['items'][$id_mat] ?? 0);
+                                    }
+                                    
+                                    // Kurangkan dari kuota asli PO
+                                    $sisaRealTime = max(0, $mat['sisa_kebutuhan'] - $totalDialokasikan);
+                                @endphp
+                                
+                                <div class="flex justify-between items-center bg-gray-50 p-3 rounded-lg border border-gray-200">
+                                    <div class="flex flex-col">
+                                        <span class="text-sm font-bold text-gray-800">{{ $mat['nama_material'] }}</span>
+                                        
+                                        {{-- Teks Maks Kuota Sisa yang berkurang otomatis saat mengetik --}}
+                                        <span class="text-xs text-gray-500 font-medium">
+                                            Maks Kuota Sisa: 
+                                            <span class="{{ $sisaRealTime == 0 ? 'text-green-600' : 'text-red-500' }} font-bold">
+                                                {{ $sisaRealTime }} {{ $mat['satuan'] }}
+                                            </span>
+                                        </span>
                                     </div>
-                                    @endif
+                                    <div class="w-32 flex items-center gap-2">
+                                        {{-- Input Jumlah --}}
+                                        <input type="number" 
+                                               wire:model.live.debounce.500ms="jadwals.{{ $index }}.items.{{ $mat['id_material'] }}" 
+                                               class="w-full rounded-md shadow-sm text-sm p-2 text-center transition-colors 
+                                                      {{ $tipe_pengiriman == 'Sekaligus' ? 'bg-gray-200 border-gray-300 text-gray-500 cursor-not-allowed' : 'bg-white border-blue-300 focus:ring-blue-500 focus:border-blue-500 font-bold text-blue-700' }}" 
+                                               {{ $tipe_pengiriman == 'Sekaligus' ? 'readonly' : '' }}
+                                               min="0">
+                                    </div>
                                 </div>
                                 @endforeach
                             </div>
@@ -324,7 +338,7 @@
                             <tr class="hover:bg-gray-50 transition-colors">
                                 <td class="px-4 py-3 text-sm text-gray-900 font-medium">{{ $retur->nama_material }}</td>
                                 <td class="px-4 py-3 text-sm text-red-600 font-bold text-center text-lg">{{ $retur->jumlah_rusak }}</td>
-                                <td class="px-4 py-3 text-sm text-gray-600 italic">"{{ $retur->catatan ?? 'Tidak ada catatan' }}"</td>
+                                <td class="px-4 py-3 text-sm text-gray-600 italic">"{{ $retur->alasan_return ?? 'Tidak ada catatan' }}"</td>
                                 <td class="px-4 py-3 text-center flex justify-center">
                                     @if($retur->foto_bukti_rusak)
                                         <a href="{{ asset('storage/' . $retur->foto_bukti_rusak) }}" target="_blank" title="Klik untuk memperbesar">

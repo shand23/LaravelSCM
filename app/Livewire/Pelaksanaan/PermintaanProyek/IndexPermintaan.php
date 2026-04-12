@@ -9,6 +9,7 @@ use App\Models\PermintaanProyek;
 use App\Models\DetailPermintaanProyek;
 use App\Models\Proyek;
 use App\Models\Material;
+use App\Models\PenggunaanMaterial;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -230,6 +231,9 @@ class IndexPermintaan extends Component
 
     public function render()
     {
+
+        $usedPermintaanIds = PenggunaanMaterial::pluck('id_permintaan')->toArray();    
+
         $permintaans = PermintaanProyek::with(['proyek'])
             ->where('id_user', Auth::id())
             ->where(function($q) {
@@ -254,6 +258,7 @@ class IndexPermintaan extends Component
             'permintaans' => $permintaans,
             'listProyek' => $listProyek,
             'listMaterial' => Material::all(),
+            'usedPermintaanIds' => $usedPermintaanIds, // Kirim ke blade
         ]);
     }
 }
