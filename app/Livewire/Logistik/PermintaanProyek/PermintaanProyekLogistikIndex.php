@@ -26,7 +26,7 @@ class PermintaanProyekLogistikIndex extends Component
     public $permintaanTerpilih = null;
     public $detailBarang = [];
     public $riwayatBatch = []; 
-
+    public $proyeksiBatch = [];
     public function updatingSearch()
     {
         $this->resetPage();
@@ -43,6 +43,51 @@ class PermintaanProyekLogistikIndex extends Component
     
     if ($this->permintaanTerpilih) {
         $this->detailBarang = $this->permintaanTerpilih->detailPermintaan;
+        
+$this->proyeksiBatch = []; // Reset data setiap kali buka modal
+            
+            foreach ($this->detailBarang as $detail) {
+                // Catatan: Sesuaikan 'jumlah_minta' atau 'jumlah_disetujui' dengan nama kolom di tabel detail_permintaan_proyek Anda.
+                // Disini saya asumsikan nama kolomnya adalah 'jumlah_disetujui'
+               // Mengambil sisa yang belum terkirim (Jumlah Diminta - Jumlah Terkirim)
+$kebutuhan = $detail->jumlah_diminta - $detail->jumlah_terkirim;
+                $id_material = $detail->id_material;
+
+                // Tarik batch stok yang tersedia urut dari paling tua (FIFO)
+                $batches = StokBatchFifo::with('lokasiRak')
+                            ->where('id_material', $id_material)
+                            ->where('sisa_stok', '>', 0)
+                            ->orderBy('tanggal_masuk', 'asc')
+                            ->get();
+
+                $sisaKebutuhan = $kebutuhan;
+                $rencanaAmbil = [];
+
+                foreach ($batches as $batch) {
+                    if ($sisaKebutuhan <= 0) break; // Jika kebutuhan sudah terpenuhi, hentikan loop
+
+                    $ambil = min($batch->sisa_stok, $sisaKebutuhan);
+                    
+                    $rencanaAmbil[] = [
+                        'id_stok' => $batch->id_stok,
+                        'lokasi' => $batch->lokasiRak ? $batch->lokasiRak->nama_lokasi : 'Rak Tidak Diketahui',
+                        'tanggal_masuk' => $batch->tanggal_masuk ? $batch->tanggal_masuk->format('d/m/Y') : '-',
+                        'stok_tersedia' => $batch->sisa_stok,
+                        'jumlah_diambil' => $ambil
+                    ];
+
+                    $sisaKebutuhan -= $ambil;
+                }
+
+                // Simpan hasil proyeksi per material
+                $this->proyeksiBatch[$id_material] = [
+                    'nama_material' => $detail->material->nama_material ?? 'Material Tidak Diketahui',
+                    'kebutuhan_total' => $kebutuhan,
+                    'rencana_batch' => $rencanaAmbil,
+                    'kekurangan' => $sisaKebutuhan > 0 ? $sisaKebutuhan : 0 // Jika ada sisa, berarti ini yang akan jadi PR/RFQ
+                ];
+            }
+
         
         // 1. Ambil data mentah dari database
         $riwayatRaw = PengeluaranStokFifo::with('stokBatch')

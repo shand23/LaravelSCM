@@ -160,7 +160,75 @@
                     </tbody>
                 </table>
             </div>
+{{-- ========================================================================= --}}
+{{-- TAMPILAN PROYEKSI PENGAMBILAN STOK (PICKING LIST GUDANG) --}}
+{{-- ========================================================================= --}}
+@if(!empty($proyeksiBatch) && in_array($permintaanTerpilih->status_permintaan, ['Disetujui PM', 'Diproses Sebagian']))
+    <div class="mt-8 mb-6 border-2 border-indigo-100 rounded-2xl overflow-hidden shadow-sm flex flex-col">
+        {{-- Header Proyeksi (Tetap di atas saat di-scroll) --}}
+        <div class="bg-indigo-50 px-5 py-4 border-b border-indigo-100 shrink-0">
+            <div class="flex items-center gap-3">
+                <div class="p-2 bg-indigo-600 rounded-lg text-white">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+                </div>
+                <div>
+                    <h3 class="text-sm font-extrabold text-indigo-900 uppercase tracking-wider">Rencana Pengambilan Stok (Picking List)</h3>
+                    <p class="text-xs text-indigo-600 font-medium">Instruksi lokasi rak untuk persiapan material.</p>
+                </div>
+            </div>
+        </div>
+        
+        {{-- AREA SCROLL: max-h-[40vh] md:max-h-80 dan overflow-y-auto --}}
+        <div class="p-5 bg-white space-y-4 max-h-[40vh] md:max-h-80 overflow-y-auto relative">
+            @foreach($proyeksiBatch as $id_mat => $proyeksi)
+                @if($proyeksi['kebutuhan_total'] > 0)
+                <div class="border border-gray-100 rounded-xl bg-gray-50/50 p-4">
+                    {{-- Responsif: Menjadi atas-bawah di HP, kiri-kanan di Laptop --}}
+                    <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-2 mb-3">
+                        <span class="font-bold text-gray-800">{{ $proyeksi['nama_material'] }}</span>
+                        <span class="px-3 py-1 bg-gray-200 text-gray-700 rounded-full text-[10px] font-black italic inline-block w-max">SISA KEBUTUHAN: {{ $proyeksi['kebutuhan_total'] }}</span>
+                    </div>
+                    
+                    {{-- AREA SCROLL HORIZONTAL (Untuk Tabel di HP) --}}
+                    <div class="overflow-x-auto rounded-lg border border-gray-200 custom-scrollbar">
+                        <table class="w-full text-left text-xs min-w-[450px]">
+                            <thead class="bg-gray-100 text-gray-600 font-bold uppercase sticky top-0">
+                                <tr>
+                                    <th class="px-3 py-2">Lokasi Rak</th>
+                                    <th class="px-3 py-2 text-right">Batch Tgl</th>
+                                    <th class="px-3 py-2 text-right">Tersedia</th>
+                                    <th class="px-3 py-2 text-right text-indigo-600 font-black">Ambil</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100 bg-white">
+                                @forelse($proyeksi['rencana_batch'] as $batch)
+                                <tr class="hover:bg-indigo-50/30 transition-colors">
+                                    <td class="px-3 py-2 font-bold text-indigo-700 whitespace-nowrap">{{ $batch['lokasi'] }}</td>
+                                    <td class="px-3 py-2 text-right text-gray-500 whitespace-nowrap">{{ $batch['tanggal_masuk'] }}</td>
+                                    <td class="px-3 py-2 text-right text-gray-400">{{ $batch['stok_tersedia'] }}</td>
+                                    <td class="px-3 py-2 text-right font-black text-indigo-600">{{ $batch['jumlah_diambil'] }}</td>
+                                </tr>
+                                @empty
+                                <tr>
+                                    <td colspan="4" class="px-3 py-4 text-center text-red-500 font-bold italic bg-red-50">STOK GUDANG KOSONG!</td>
+                                </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
 
+                    @if($proyeksi['kekurangan'] > 0)
+                        <div class="mt-3 flex items-start sm:items-center gap-2 text-[11px] font-bold text-red-600 bg-red-50 p-2 rounded-lg border border-red-100">
+                            <svg class="w-4 h-4 mt-0.5 sm:mt-0 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
+                            <span>Stok Kurang {{ $proyeksi['kekurangan'] }}. Sistem otomatis membuat RFQ/PR jika diproses.</span>
+                        </div>
+                    @endif
+                </div>
+                @endif
+            @endforeach
+        </div>
+    </div>
+@endif
             <div class="px-6 py-4 bg-gray-50 border-t flex justify-end gap-3 rounded-b-3xl">
                 <button wire:click="closeModal" class="px-5 py-2.5 text-sm font-bold text-gray-600 hover:bg-gray-200 rounded-xl transition-colors">Tutup</button>
                 

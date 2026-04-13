@@ -20,16 +20,34 @@
         </div>
     @endif
 
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div class="p-5 border-b bg-white flex flex-col md:flex-row justify-between items-center gap-4">
-            <div class="relative w-full md:w-96">
-                <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                </span>
-                <input type="text" wire:model.live.debounce.300ms="search" placeholder="Cari Nama atau ID Material..." class="w-full pl-10 pr-4 py-2.5 border-gray-200 rounded-xl focus:ring-indigo-500 focus:border-indigo-500 text-sm font-medium bg-gray-50">
+   {{-- TOOLBAR: SEARCH & FILTER --}}
+    <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 mb-6 flex flex-col md:flex-row gap-4 justify-between items-center">
+        
+        {{-- Input Pencarian --}}
+        <div class="relative w-full md:w-1/3">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
             </div>
+            <input type="text" wire:model.live.debounce.300ms="search" placeholder="Cari ID / Nama Material..." 
+                class="pl-10 form-control block w-full rounded-lg border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
         </div>
 
+        {{-- Dropdown Filter Kategori --}}
+        <div class="w-full md:w-1/4">
+            <select wire:model.live="filter_kategori" 
+                class="form-control block w-full rounded-lg border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm cursor-pointer">
+                <option value="">-- Semua Kategori --</option>
+                @foreach($listKategori as $kat)
+                    {{-- Sesuaikan field 'id_kategori_material' dan 'nama_kategori' sesuai kolom di database Anda --}}
+                    <option value="{{ $kat->id_kategori_material }}">{{ $kat->nama_kategori ?? $kat->id_kategori_material }}</option>
+                @endforeach
+            </select>
+        </div>
+        
+    </div>
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div class="overflow-x-auto">
             <table class="w-full text-left">
                 <thead class="bg-gray-800 text-[10px] font-black text-gray-300 uppercase tracking-widest">
@@ -96,7 +114,7 @@
                                 @if($stok->total_sisa > 0)
                                     <button wire:click="lihatBatch('{{ $stok->id_material }}')" class="bg-indigo-100 hover:bg-indigo-600 text-indigo-700 hover:text-white px-3 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
-                                        Rak
+                                        Rak & Lapor
                                     </button>
                                 @endif
 
@@ -144,9 +162,11 @@
                 </button>
             </div>
 
-            <div class="bg-amber-50 border-b border-amber-100 p-4 flex gap-3 items-center">
-                <span class="bg-amber-200 text-amber-800 p-1.5 rounded-lg"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></span>
-                <p class="text-sm text-amber-800 font-semibold">Gunakan fitur <strong>Lapor</strong> hanya jika ada barang rusak/hilang pada batch tertentu agar data sistem sesuai dengan fisik Gudang.</p>
+            <div class="bg-blue-50 border-b border-blue-100 p-4 flex gap-3 items-center">
+                <span class="bg-blue-200 text-blue-800 p-1.5 rounded-lg">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </span>
+                <p class="text-sm text-blue-800 font-semibold">Gunakan <strong>Edit/Pindah Rak</strong> untuk memindahkan stok (bisa sebagian/split). Gunakan <strong>Lapor</strong> untuk mencatat barang rusak.</p>
             </div>
 
             <div class="p-6 overflow-y-auto max-h-[60vh]">
@@ -157,7 +177,7 @@
                             <th class="px-4 py-3">ID Batch & Tgl Masuk</th>
                             <th class="px-4 py-3">Lokasi Penempatan</th>
                             <th class="px-4 py-3 text-center">Sisa Stok</th>
-                            <th class="px-4 py-3 text-right rounded-r-lg">Aksi Penyesuaian</th>
+                            <th class="px-4 py-3 text-right rounded-r-lg">Aksi Cepat</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100 text-sm">
@@ -176,15 +196,22 @@
                             </td>
                             <td class="px-4 py-4">
                                 <div class="font-bold text-indigo-700">{{ $batch->lokasiRak->nama_lokasi ?? 'BELUM DISET' }}</div>
-                                <div class="text-[10px] text-indigo-400 font-black tracking-widest mt-0.5">AREA: {{ $batch->lokasiRak->area ?? '-' }}</div>
+                                {{-- PERBAIKAN: Menggabungkan properti AREA dan area --}}
+                                <div class="text-[10px] text-indigo-400 font-black tracking-widest mt-0.5">AREA: {{ $batch->lokasiRak->AREA ?? $batch->lokasiRak->area ?? '-' }}</div>
                             </td>
                             <td class="px-4 py-4 text-center">
                                 <div class="text-xl font-black text-gray-800">{{ $batch->sisa_stok }}</div>
                             </td>
                             <td class="px-4 py-4 text-right">
-                                <button wire:click="openAdjustment('{{ $batch->id_stok }}', '{{ $batch->id_material }}', {{ $batch->sisa_stok }})" class="bg-red-50 hover:bg-red-500 text-red-600 hover:text-white border border-red-200 hover:border-red-500 px-3 py-2 rounded-lg text-xs font-bold transition-all shadow-sm">
-                                    <i class="fas fa-exclamation-triangle mr-1"></i> Lapor
-                                </button>
+                                <div class="flex items-center justify-end gap-2">
+                                    <button wire:click="openPindahRak('{{ $batch->id_stok }}', '{{ $batch->id_material }}', '{{ $batch->id_lokasi }}', {{ $batch->sisa_stok }})" class="bg-blue-50 hover:bg-blue-500 text-blue-600 hover:text-white border border-blue-200 hover:border-blue-500 px-3 py-2 rounded-lg text-xs font-bold transition-all shadow-sm">
+                                        <svg class="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg> Pindah Rak
+                                    </button>
+                                    
+                                    <button wire:click="openAdjustment('{{ $batch->id_stok }}', '{{ $batch->id_material }}', {{ $batch->sisa_stok }})" class="bg-red-50 hover:bg-red-500 text-red-600 hover:text-white border border-red-200 hover:border-red-500 px-3 py-2 rounded-lg text-xs font-bold transition-all shadow-sm">
+                                        <i class="fas fa-exclamation-triangle mr-1"></i> Lapor
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                         @endforeach
@@ -196,10 +223,78 @@
     @endif
 
     {{-- ========================================== --}}
-    {{-- MODAL FORM PENYESUAIAN (LAPOR RUSAK) --}}
+    {{-- MODAL PINDAH RAK & SPLIT BATCH --}}
+    {{-- ========================================== --}}
+    @if($isModalPindahRakOpen)
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/75 backdrop-blur-sm p-4">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden animate-[fadeIn_0.1s_ease-in]">
+            <div class="bg-blue-600 px-6 py-4 flex justify-between items-center">
+                <h3 class="text-lg font-bold text-white flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
+                    Pindah Rak / Alokasi Ulang
+                </h3>
+                <button wire:click="closePindahRak" class="text-blue-200 hover:text-white">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+
+            <form wire:submit.prevent="submitPindahRak">
+                <div class="p-6 space-y-4">
+                    <div class="bg-gray-50 p-3 rounded-lg border border-gray-200 text-sm">
+                        <div class="flex justify-between mb-1">
+                            <span class="text-gray-500 font-semibold">ID Batch Asal:</span>
+                            <span class="font-bold text-gray-800">{{ $pindah_id_stok }}</span>
+                        </div>
+                        <div class="flex justify-between mb-1">
+                            <span class="text-gray-500 font-semibold">Material:</span>
+                            <span class="font-bold text-indigo-600 uppercase">{{ $namaMaterialModal }}</span>
+                        </div>
+                        <div class="flex justify-between text-xs text-amber-600 mt-2">
+                            <span>*Mengisi jumlah kurang dari {{ $pindah_max_stok }} akan memecah data batch (Split).</span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Pilih Rak Tujuan</label>
+                        <select wire:model="pindah_id_lokasi_tujuan" class="w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200">
+                            <option value="">-- Pilih Rak Tujuan Baru --</option>
+                            @foreach($listLokasiRak as $rak)
+                                {{-- PERBAIKAN: Menggabungkan properti AREA dan area --}}
+                                <option value="{{ $rak->id_lokasi }}">
+                                    {{ $rak->nama_lokasi }} (Area: {{ $rak->AREA ?? $rak->area ?? '-' }})
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('pindah_id_lokasi_tujuan') <span class="text-xs text-red-500">{{ $message }}</span> @enderror
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">
+                            Jumlah Dipindah <span class="text-blue-600">(Maks: {{ $pindah_max_stok }})</span>
+                        </label>
+                        <input type="number" wire:model="pindah_jumlah" min="1" max="{{ $pindah_max_stok }}" class="w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200">
+                        @error('pindah_jumlah') <span class="text-xs text-red-500">{{ $message }}</span> @enderror
+                    </div>
+                </div>
+
+                <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-3">
+                    <button type="button" wire:click="closePindahRak" class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-bold text-gray-700 hover:bg-gray-50">Batal</button>
+                    
+                    <button type="submit" wire:loading.attr="disabled" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold shadow hover:bg-blue-700 focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 flex items-center gap-2">
+                        <span wire:loading.remove wire:target="submitPindahRak">Simpan Perubahan</span>
+                        <span wire:loading wire:target="submitPindahRak">Memproses...</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    @endif
+
+    {{-- ========================================== --}}
+    {{-- MODAL FORM PENYESUAIAN (LAPOR RUSAK) TETAP SAMA --}}
     {{-- ========================================== --}}
     @if($isModalAdjustmentOpen)
-    <div class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/75 backdrop-blur-sm p-4">
+    <div class="fixed inset-0 z-[60] flex items-center justify-center bg-gray-900/75 backdrop-blur-sm p-4">
         <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden animate-[fadeIn_0.1s_ease-in]">
             <div class="bg-red-600 px-6 py-4 flex justify-between items-center">
                 <h3 class="text-lg font-bold text-white flex items-center">
@@ -247,25 +342,21 @@
                         @error('adj_keterangan') <span class="text-xs text-red-500">{{ $message }}</span> @enderror
                     </div>
 
-                    {{-- AREA UPLOAD FOTO BUKTI --}}
                     <div>
                         <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Bukti Foto (Opsional)</label>
                         <input type="file" wire:model="adj_bukti_foto" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 border border-gray-300 rounded-lg shadow-sm focus:border-red-500 focus:ring focus:ring-red-200 cursor-pointer">
                         
-                        {{-- Indikator Loading Saat File Diunggah --}}
                         <div wire:loading wire:target="adj_bukti_foto" class="text-xs text-amber-600 font-bold mt-2 animate-pulse flex items-center gap-1">
                             <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                             Sedang memproses gambar...
                         </div>
 
-                        {{-- Preview Gambar Temporary --}}
                         @if ($adj_bukti_foto)
                             <div class="mt-3 relative inline-block">
                                 <span class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Preview Bukti:</span>
                                 <img src="{{ $adj_bukti_foto->temporaryUrl() }}" class="h-32 object-cover rounded-xl border-2 border-dashed border-gray-300 p-1 shadow-sm">
                             </div>
                         @endif
-
                         @error('adj_bukti_foto') <span class="text-xs text-red-500 block mt-1">{{ $message }}</span> @enderror
                     </div>
                 </div>
@@ -273,7 +364,6 @@
                 <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-3">
                     <button type="button" wire:click="closeAdjustment" class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-bold text-gray-700 hover:bg-gray-50">Batal</button>
                     
-                    {{-- Tombol submit disable saat file upload proses --}}
                     <button type="submit" wire:loading.attr="disabled" class="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-bold shadow hover:bg-red-700 focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
                         <span wire:loading.remove wire:target="submitAdjustment">Simpan Penyesuaian</span>
                         <span wire:loading wire:target="submitAdjustment">Menyimpan...</span>

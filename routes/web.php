@@ -11,9 +11,10 @@ use App\Livewire\Pengadaan\Supplier\SupplierIndex;
 use App\Livewire\Manajemen\Approval\ApprovalIndex; 
 use App\Livewire\Logistik\Stok\StokIndex;
 
-// --- IMPORT COMPONENT BARU: PENYESUAIAN STOK ---
-use App\Livewire\Logistik\Stok\PenyesuaianIndex;
 
+// --- IMPORT COMPONENT LOKASI RAK & PENYESUAIAN STOK ---
+use App\Livewire\Logistik\LokasiRak\LokasiRakIndex; // <--- INI BARU
+use App\Livewire\Logistik\Stok\PenyesuaianIndex;
 // Pengajuan Pembelian (PR)
 use App\Livewire\Logistik\PengajuanPembelian\PengajuanIndex as LogistikPengajuanIndex;
 
@@ -80,7 +81,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::prefix('logistik')->name('logistik.')->group(function () {
         Route::get('/kategori', KategoriIndex::class)->name('kategori'); 
         Route::get('/material', MaterialIndex::class)->name('material');
-        
+        Route::get('/lokasi-rak', LokasiRakIndex::class)->name('lokasi-rak');
+
         // Pengajuan Pembelian (PR)
         Route::get('/pengajuan', LogistikPengajuanIndex::class)->name('pengajuan');
 

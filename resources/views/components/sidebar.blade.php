@@ -152,6 +152,15 @@
                     <span class="font-medium text-sm">Data Material</span>
                 </a>
 
+                <a href="{{ route('logistik.lokasi-rak') }}" 
+               class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group mb-1
+               {{ request()->routeIs('logistik.lokasi-rak') 
+                  ? 'bg-purple-600 text-white shadow-lg shadow-purple-900/40 translate-x-1' 
+                  : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
+                <svg class="w-5 h-5 {{ request()->routeIs('logistik.lokasi-rak') ? 'text-white' : 'text-gray-500 group-hover:text-purple-400' }} transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                <span class="font-medium text-sm">Data Lokasi Rak</span>
+            </a>
+
                 {{-- --- TRANSAKSI BARANG --- --}}
                 <div class="mt-4 mb-2 px-4">
                     <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Transaksi Barang</p>
