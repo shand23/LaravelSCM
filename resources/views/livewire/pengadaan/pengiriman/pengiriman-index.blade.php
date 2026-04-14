@@ -87,39 +87,72 @@
                             {{ $p->status_pengiriman }}
                         </span>
                     </td>
-                    <td class="px-6 py-4 text-center text-sm font-medium flex justify-center items-center gap-2 flex-wrap">
-                        @if($p->status_pengiriman == 'Pending')
-                            <button wire:click="kirimDO('{{ $p->id_pengiriman }}')" wire:confirm="Status akan diubah menjadi 'Dalam Perjalanan'. Yakin DO ini sudah dikirim ke kurir/ekspedisi?" class="text-green-600 hover:text-green-900 bg-green-50 px-2.5 py-1.5 rounded-md border border-green-100 transition flex items-center gap-1" title="Kirim Pesanan">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                                Kirim
-                            </button>
-                            <button wire:click="editDO('{{ $p->id_pengiriman }}')" class="text-yellow-600 hover:text-yellow-900 bg-yellow-50 px-2.5 py-1.5 rounded-md border border-yellow-100 transition flex items-center gap-1" title="Edit DO">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-                                Edit
-                            </button>
-                            <button wire:click="deleteDO('{{ $p->id_pengiriman }}')" wire:confirm="Yakin ingin menghapus data DO ini secara permanen?" class="text-red-600 hover:text-red-900 bg-red-50 px-2.5 py-1.5 rounded-md border border-red-100 transition flex items-center gap-1" title="Hapus DO">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                                Hapus
-                            </button>
-                        @elseif($p->status_pengiriman == 'Return & Kirim Ulang')
+
+                    
+
+  <td class="px-6 py-4 text-center text-sm font-medium">
+    <div class="flex justify-center items-center gap-2 flex-wrap">
+        
+        {{-- TOMBOL: KIRIM DO (Jika masih Pending) --}}
+        @if($p->status_pengiriman == 'Pending')
+            <button wire:click="kirimDO('{{ $p->id_pengiriman }}')" 
+                    wire:confirm="Yakin ingin memproses pengiriman ini sekarang?" 
+                    class="text-indigo-700 bg-indigo-50 hover:bg-indigo-600 hover:text-white px-2.5 py-1.5 rounded-md border border-indigo-200 transition flex items-center gap-1" title="Kirim Sekarang">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+                Kirim
+            </button>
+            <button wire:click="editDO('{{ $p->id_pengiriman }}')" class="text-amber-600 hover:text-amber-900 bg-amber-50 px-2.5 py-1.5 rounded-md border border-amber-200 transition" title="Edit">
+                Edit
+            </button>
+            <button wire:click="deleteDO('{{ $p->id_pengiriman }}')" 
+                    wire:confirm="Yakin ingin menghapus DO ini? Jadwal truk dan alokasi barang akan dibatalkan." 
+                    class="text-red-600 hover:text-red-900 bg-red-50 px-2.5 py-1.5 rounded-md border border-red-200 transition" title="Hapus">
+                Hapus
+            </button>
+        @endif
+
+        
+
+        {{-- TOMBOL BARU: TIBA DI LOKASI (Jika sedang Dalam Perjalanan) --}}
+        @if($p->status_pengiriman == 'Dalam Perjalanan')
+            <button wire:click="markAsArrived('{{ $p->id_pengiriman }}')" 
+                    wire:confirm="Konfirmasi bahwa pengiriman ini telah tiba di lokasi/gudang?"
+                    class="text-emerald-700 bg-emerald-50 hover:bg-emerald-600 hover:text-white px-2.5 py-1.5 rounded-md border border-emerald-200 shadow-sm transition flex items-center gap-1 font-bold" title="Tandai Tiba">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.242-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                Tiba di Lokasi
+            </button>
+        @endif
+
+        {{-- TOMBOL: CETAK DO (Cetak PDF) --}}
+        <button wire:click="cetakDO('{{ $p->id_pengiriman }}')" class="text-gray-700 bg-gray-50 hover:bg-gray-200 px-2.5 py-1.5 rounded-md border border-gray-300 transition flex items-center gap-1" title="Cetak Surat Jalan">
+            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+            PDF
+        </button>
+ @if($p->status_pengiriman == 'Return & Kirim Ulang')
                             <button wire:click="prosesRetur('{{ $p->id_pengiriman }}')" class="text-orange-600 hover:text-orange-900 bg-orange-50 px-2.5 py-1.5 rounded-md border border-orange-200 transition flex items-center gap-1 shadow-sm font-bold" title="Kirim Ulang Barang Retur">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path></svg>
                                 Kirim Ulang
                             </button>
-                        @else
-                            <span class="inline-flex items-center gap-1 text-gray-500 text-xs font-bold bg-gray-50 px-3 py-1.5 rounded-md border border-gray-200">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
-                                Terkunci
-                            </span>
-                        @endif
 
-                        @if(in_array($p->id_pengiriman, $doDenganRetur ?? []))
-                            <button wire:click="lihatDetailRetur('{{ $p->id_pengiriman }}')" class="text-purple-600 hover:text-purple-900 bg-purple-50 px-2.5 py-1.5 rounded-md border border-purple-200 transition flex items-center gap-1 shadow-sm font-bold" title="Lihat Bukti Barang Rusak">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
-                                Bukti Retur
-                            </button>
-                        @endif
-                    </td>
+           @endif                 
+        {{-- INFO TERKUNCI (Jika Selesai / Tiba di Lokasi) --}}
+        @if($p->status_pengiriman == 'Tiba di Lokasi' || $p->status_pengiriman == 'Selesai')
+            <span class="text-gray-400 bg-gray-50 px-2.5 py-1.5 rounded-md border border-gray-100 flex items-center gap-1 cursor-not-allowed text-xs" title="Data sudah masuk proses logistik">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                Terkunci
+            </span>
+        @endif
+
+        {{-- TOMBOL BUKTI RETUR (Jika DO ini memiliki retur) --}}
+        @if(in_array($p->id_pengiriman, $doDenganRetur ?? []))
+            <button wire:click="lihatDetailRetur('{{ $p->id_pengiriman }}')" class="text-purple-600 hover:text-purple-900 bg-purple-50 px-2.5 py-1.5 rounded-md border border-purple-200 transition flex items-center gap-1 shadow-sm font-bold" title="Lihat Bukti Barang Rusak">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                Retur
+            </button>
+        @endif
+        
+    </div>
+</td>
                 </tr>
                 @empty
                 <tr>
@@ -235,6 +268,7 @@
                             </div>
                             
                             <div class="space-y-3">
+                                
                                 @foreach($jadwal['details'] ?? [] as $detIndex => $detail)
                                     @php
                                         // Hitung total material yang sudah terisi di semua truk saat ini
@@ -324,10 +358,17 @@
                 <button wire:click="closeModal" type="button" class="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-lg shadow-sm text-sm font-medium transition-colors">
                     Batal
                 </button>
-                <button wire:click="store" type="button" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg shadow-sm text-sm font-medium transition-colors flex items-center gap-2">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                    Simpan DO
-                </button>
+               @if($edit_id)
+        {{-- Jika sedang EDIT, panggil fungsi update() --}}
+        <button type="button" wire:click="update" class="bg-amber-600 hover:bg-amber-700 text-white px-6 py-2 rounded-lg font-semibold">
+            Simpan Perubahan Jadwal
+        </button>
+    @else
+        {{-- Jika sedang BARU, panggil fungsi store() asli Anda --}}
+        <button type="button" wire:click="store" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold">
+            Simpan DO Baru
+        </button>
+    @endif
             </div>
         </div>
     </div>

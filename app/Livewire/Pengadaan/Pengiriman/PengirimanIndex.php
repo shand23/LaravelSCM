@@ -224,6 +224,50 @@ class PengirimanIndex extends Component
         $this->isModalOpen = true;
     }
 
+    // --- FUNGSI BARU: UPDATE STATUS TIBA DI LOKASI ---
+    public function markAsArrived($id_pengiriman)
+    {
+        try {
+            $pengiriman = Pengiriman::find($id_pengiriman);
+            
+            if ($pengiriman) {
+                $pengiriman->status_pengiriman = 'Tiba di Lokasi';
+                $pengiriman->save();
+
+                session()->flash('message', 'Status pengiriman berhasil diupdate menjadi Tiba di Lokasi.');
+            } else {
+                session()->flash('error', 'Data pengiriman tidak ditemukan.');
+            }
+        } catch (\Exception $e) {
+            session()->flash('error', 'Terjadi kesalahan sistem: ' . $e->getMessage());
+        }
+    }
+
+public function cetakDO($id_pengiriman)
+    {
+        try {
+            // Tambahkan 'kontrak.supplier' agar data supplier ikut terambil
+            $pengiriman = Pengiriman::with([
+                'kontrak.supplier', 
+                'detailPengiriman.detailKontrak.material'
+            ])->where('id_pengiriman', $id_pengiriman)->firstOrFail();
+
+            $pdf = Pdf::loadView('livewire.pengadaan.pengiriman.cetak-do-pdf', [
+                'pengiriman' => $pengiriman
+            ]);
+
+            $pdf->setPaper('A4', 'portrait');
+
+            return response()->streamDownload(function () use ($pdf) {
+                echo $pdf->output();
+            }, 'Surat_Jalan_' . $pengiriman->id_pengiriman . '.pdf');
+
+        } catch (\Exception $e) {
+            session()->flash('error', 'Gagal mencetak dokumen: ' . $e->getMessage());
+        }
+    }
+    
+    
     public function lihatDetailRetur($id_pengiriman)
     {
         $this->infoDORetur = Pengiriman::find($id_pengiriman);
@@ -321,37 +365,65 @@ class PengirimanIndex extends Component
         $this->isModalOpen = true;
     }
 
-    public function editDO($id)
-    {
-        $this->resetForm();
-        $this->edit_id = $id;
-        
-        $do = Pengiriman::with('detailPengiriman')->find($id);
-        if (!$do || $do->status_pengiriman != 'Pending') return;
-
-        $this->id_kontrak = $do->id_kontrak;
-        $this->tipe_pengiriman = 'Bertahap';
-        
-        $this->loadDataPO($do->id_kontrak);
-
-        $details = [];
-        foreach ($do->detailPengiriman as $det) {
-            $details[] = [
-                'id_detail_kontrak' => $det->id_detail_kontrak,
-                'qty' => $det->jumlah_dikirim
-            ];
-        }
-
-        $this->jadwals = [[
-            'tanggal_berangkat' => \Carbon\Carbon::parse($do->tanggal_berangkat)->format('Y-m-d'),
-            'estimasi_tanggal_tiba' => \Carbon\Carbon::parse($do->estimasi_tanggal_tiba)->format('Y-m-d'),
-            'keterangan' => $do->keterangan,
-            'details' => $details
-        ]];
-
-        $this->isModalOpen = true;
+  // 1. Fungsi Edit: Hanya untuk mengambil data tanggal & keterangan
+public function editDO($id)
+{
+    $this->resetForm();
+    $this->edit_id = $id;
+    
+    $do = Pengiriman::with('detailPengiriman')->find($id);
+    
+    if (!$do) {
+        session()->flash('error', 'Data tidak ditemukan.');
+        return;
     }
 
+    $this->id_kontrak = $do->id_kontrak;
+    $this->loadDataPO($do->id_kontrak);
+
+    // Memasukkan detail yang sudah ada ke form agar tampilan tidak kosong
+    $details = [];
+    foreach ($do->detailPengiriman as $det) {
+        $details[] = [
+            'id_detail_kontrak' => $det->id_detail_kontrak,
+            'qty' => $det->jumlah_dikirim
+        ];
+    }
+
+    $this->jadwals = [[
+        'tanggal_berangkat' => \Carbon\Carbon::parse($do->tanggal_berangkat)->format('Y-m-d'),
+        'estimasi_tanggal_tiba' => \Carbon\Carbon::parse($do->estimasi_tanggal_tiba)->format('Y-m-d'),
+        'keterangan' => $do->keterangan,
+        'details' => $details
+    ]];
+
+    $this->isModalOpen = true;
+}
+
+// 2. Fungsi Update: KHUSUS untuk menyimpan hasil edit (Tidak mengganggu store)
+public function update()
+{
+    $this->validate([
+        'jadwals.0.tanggal_berangkat' => 'required|date',
+        'jadwals.0.estimasi_tanggal_tiba' => 'required|date|after_or_equal:jadwals.0.tanggal_berangkat',
+    ]);
+
+    try {
+        $pengiriman = Pengiriman::find($this->edit_id);
+        $jadwal = $this->jadwals[0];
+
+        $pengiriman->update([
+            'tanggal_berangkat' => $jadwal['tanggal_berangkat'],
+            'estimasi_tanggal_tiba' => $jadwal['estimasi_tanggal_tiba'],
+            'keterangan' => $jadwal['keterangan'] ?? null,
+        ]);
+
+        session()->flash('message', 'Jadwal pengiriman berhasil diperbarui.');
+        $this->closeModal();
+    } catch (\Exception $e) {
+        session()->flash('error', 'Gagal memperbarui: ' . $e->getMessage());
+    }
+}
     public function kirimDO($id)
     {
         $do = Pengiriman::find($id);
