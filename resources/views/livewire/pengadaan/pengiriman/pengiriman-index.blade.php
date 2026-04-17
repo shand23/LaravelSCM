@@ -261,7 +261,7 @@
                             <div class="flex justify-between items-center mb-4">
                                 <p class="text-xs font-bold text-blue-800 uppercase tracking-wider">Muatan Material</p>
                                 @if(!$id_do_retur && $tipe_pengiriman != 'Sekaligus')
-                                <button wire:click="addMaterialToJadwal({{ $index }})" type="button" class="text-xs bg-white text-blue-600 border border-blue-200 font-bold px-3 py-1.5 rounded-md hover:bg-blue-50 shadow-sm transition">
+                                <button wire:click="addMaterialToJadwal({{ $index }})" type="button" {{ $edit_id ? 'disabled' : '' }} class="text-xs bg-white text-blue-600 border border-blue-200 font-bold px-3 py-1.5 rounded-md hover:bg-blue-50 shadow-sm transition">
                                     + Tambah Item
                                 </button>
                                 @endif
@@ -299,7 +299,7 @@
                                 <div wire:key="truk-{{ $index }}-det-{{ $detIndex }}" class="flex gap-4 items-end bg-white p-3.5 rounded-lg border border-gray-200 shadow-sm">
                                     <div class="flex-1">
     <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">Pilih Material (Sisa PO)</label>
-    <select wire:model.live="jadwals.{{ $index }}.details.{{ $detIndex }}.id_detail_kontrak" class="w-full border-gray-300 rounded-md shadow-sm border px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500 {{ ($id_do_retur || $tipe_pengiriman == 'Sekaligus') ? 'bg-gray-100 pointer-events-none' : '' }}" {{ ($id_do_retur || $tipe_pengiriman == 'Sekaligus') ? 'disabled' : '' }}>
+    <select wire:model.live="jadwals.{{ $index }}.details.{{ $detIndex }}.id_detail_kontrak" {{ $edit_id ? 'disabled' : '' }} class="w-full border-gray-300 rounded-md shadow-sm border px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500 {{ ($id_do_retur || $tipe_pengiriman == 'Sekaligus') ? 'bg-gray-100 pointer-events-none' : '' }}" {{ ($id_do_retur || $tipe_pengiriman == 'Sekaligus') ? 'disabled' : '' }}>
         <option value="">-- Pilih Material --</option>
         @foreach($listMaterialPO as $item)
             @php
@@ -331,7 +331,7 @@
                                         </label>
                                         <input type="number" 
                                                wire:model.live.debounce.500ms="jadwals.{{ $index }}.details.{{ $detIndex }}.qty" 
-                                               min="0" 
+                                               min="0" {{ $edit_id ? 'disabled' : '' }}
                                                oninput="this.value = Math.abs(this.value)" 
                                                class="w-full border-gray-300 rounded-md shadow-sm border px-3 py-2 text-sm font-bold text-center focus:ring-blue-500 focus:border-blue-500 {{ $tipe_pengiriman == 'Sekaligus' ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : 'text-blue-700' }}"
                                                {{ $tipe_pengiriman == 'Sekaligus' ? 'readonly' : '' }}>

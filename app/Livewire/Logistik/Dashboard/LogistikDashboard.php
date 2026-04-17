@@ -9,6 +9,7 @@ use App\Models\PengajuanPembelian;
 use App\Models\PenerimaanMaterial;
 use App\Models\PermintaanProyek;
 use App\Models\PenyesuaianStok;
+use App\Models\Pengiriman;
 
 class LogistikDashboard extends Component
 {
@@ -29,6 +30,9 @@ class LogistikDashboard extends Component
         $totalPengajuan = class_exists(PengajuanPembelian::class) 
             ? PengajuanPembelian::whereIn('status_pengajuan', ['Draft', 'Diajukan', 'Menunggu Pengadaan'])->count() : 0;
             
+        $totalDalamPerjalanan = class_exists(Pengiriman::class) 
+            ? Pengiriman::where('status_pengiriman', 'Dalam Perjalanan')->count() : 0;
+
         $totalPenerimaanPending = class_exists(PenerimaanMaterial::class) 
             ? PenerimaanMaterial::whereIn('status_penerimaan', ['Diterima Sebagian', 'Return'])->count() : 0;
             
@@ -114,6 +118,7 @@ class LogistikDashboard extends Component
         return view('livewire.logistik.dashboard.logistik-dashboard', [
             'totalMaterial'          => $totalMaterial,
             'totalPengajuan'         => $totalPengajuan,
+            'totalDalamPerjalanan'   => $totalDalamPerjalanan,
             'totalPenerimaanPending' => $totalPenerimaanPending,
             'totalPermintaanPending' => $totalPermintaanPending,
             'totalPenyesuaian'       => $totalPenyesuaian,

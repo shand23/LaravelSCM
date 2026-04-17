@@ -130,7 +130,7 @@
                         <select wire:model.live="id_pengiriman" class="w-full border-gray-300 rounded-md shadow-sm border px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500 bg-white">
                             <option value="">-- Pilih Surat Jalan --</option>
                             @foreach($listPengirimanDO as $do)
-                                <option value="{{ $do->id_pengiriman }}">{{ $do->id_pengiriman }} - Dikirim: {{ \Carbon\Carbon::parse($do->tanggal_berangkat)->format('d M') }}</option>
+                                <option value="{{ $do->id_pengiriman }}">{{ $do->id_pengiriman }} - Dikirim: {{ \Carbon\Carbon::parse($do->tanggal_berangkat)->format('d M') }} (Status: {{ $do->status_pengiriman }})</option>
                             @endforeach
                         </select>
                         @error('id_pengiriman') <span class="text-[10px] text-red-500 font-bold block mt-1">{{ $message }}</span> @enderror

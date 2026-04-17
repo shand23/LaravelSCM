@@ -1,88 +1,135 @@
 <div class="p-6">
+    {{-- HEADER --}}
     <div class="flex justify-between items-center mb-6">
-        <h2 class="text-2xl font-semibold text-gray-800">Manajemen Invoice Pembelian</h2>
-        <button wire:click="create" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition">
-            + Tambah Invoice
+        <div>
+            <h1 class="text-2xl font-bold text-gray-800">Manajemen Invoice Pembelian</h1>
+            <p class="text-sm text-gray-500 mt-1">Kelola Tagihan dan Verifikasi Bukti Pembayaran dari Supplier</p>
+        </div>
+        <button wire:click="create" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-2.5 rounded-lg shadow-sm flex items-center gap-2 transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+            Tambah Invoice
         </button>
     </div>
 
+    {{-- ALERTS --}}
     @if (session()->has('message'))
-        <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-4" role="alert">
+        <div class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-6 shadow-sm flex items-center gap-3">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
             <p>{{ session('message') }}</p>
         </div>
     @endif
     @if (session()->has('error'))
-        <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4" role="alert">
+        <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 shadow-sm flex items-center gap-3">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
             <p>{{ session('error') }}</p>
         </div>
     @endif
 
-    {{-- Tabel --}}
-    <div class="bg-white rounded-lg shadow overflow-x-auto">
+    {{-- BARIS PENCARIAN (SEARCH BAR) --}}
+   <div class="bg-white p-4 mb-6 rounded-xl shadow-sm border border-gray-100">
+        <div class="w-full md:w-1/3 relative">
+    
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            </div>
+            <input wire:model.live="search" type="text" placeholder="Cari ID Invoice atau No. Supplier..." class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out">
+        </div>
+    </div>
+    
+ {{-- TABEL (Style disamakan dengan Kontrak) --}}
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
                 <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID / Kontrak</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">No. Supplier</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total Tagihan</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Pembuat</th> 
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Aksi Cepat</th>
-                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Manajemen</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">ID / Kontrak</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">No. Supplier</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Total Tagihan</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Pembuat</th> 
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                    {{-- Kolom Aksi Cepat (Sekarang menampung semua tombol) --}}
+                    <th class="px-6 py-4 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Aksi Cepat</th>
                 </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
                 @forelse($invoices as $inv)
                 @php $isLocked = in_array($inv->status_invoice, ['Lunas', 'Dibayar Sebagian']); @endphp
-                <tr>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm">
-                        <div class="font-bold">{{ $inv->id_invoice }}</div>
-                        <div class="text-gray-500 text-xs">PO: {{ $inv->id_kontrak }}</div>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $inv->nomor_invoice_supplier }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-bold">Rp {{ number_format($inv->total_tagihan, 0, ',', '.') }}</td>
-                    
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                        {{ $inv->user->nama_lengkap ?? 'Sistem / Dihapus' }}
-                    </td>
-
+                <tr class="hover:bg-gray-50 transition-colors">
                     <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="px-2 py-1 inline-flex text-xs font-semibold rounded-full 
-                            {{ $inv->status_invoice === 'Lunas' ? 'bg-green-100 text-green-800' : 
-                               ($inv->status_invoice === 'Dibayar Sebagian' ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800') }}">
+                        <div class="text-sm font-bold text-gray-900">{{ $inv->id_invoice }}</div>
+                        <div class="text-xs text-blue-600 font-medium">PO: {{ $inv->kontrak->nomor_kontrak ?? $inv->id_kontrak }}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-medium">{{ $inv->nomor_invoice_supplier }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
+                        Rp {{ number_format($inv->total_tagihan, 0, ',', '.') }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                        {{ $inv->user->nama_lengkap ?? 'Sistem' }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2.5 py-1 inline-flex text-xs font-bold rounded-full 
+                            {{ $inv->status_invoice === 'Lunas' ? 'bg-green-100 text-green-700' : 
+                               ($inv->status_invoice === 'Dibayar Sebagian' ? 'bg-blue-100 text-blue-700' : 'bg-yellow-100 text-yellow-700') }}">
                             {{ $inv->status_invoice }}
                         </span>
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-center text-xs space-x-1">
-                        @if($inv->status_invoice !== 'Lunas')
-                            <button wire:click="setStatusLunas('{{ $inv->id_invoice }}')" class="bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600">Lunas</button>
-                            @if($inv->status_invoice !== 'Dibayar Sebagian')
-                                <button wire:click="setStatusSebagian('{{ $inv->id_invoice }}')" class="bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600">Sebagian</button>
+                    
+                    {{-- KOLOM AKSI CEPAT --}}
+                    <td class="px-6 py-4 text-center text-sm font-medium">
+                        <div class="flex items-center justify-center flex-wrap gap-2">
+                            
+                            {{-- Tombol Ubah Status --}}
+                            @if($inv->status_invoice !== 'Lunas')
+                                <button wire:click="setStatusLunas('{{ $inv->id_invoice }}')" class="bg-green-600 text-white px-3 py-1.5 rounded-md text-xs font-bold hover:bg-green-700 transition">Lunas</button>
+                                @if($inv->status_invoice !== 'Dibayar Sebagian')
+                                    <button wire:click="setStatusSebagian('{{ $inv->id_invoice }}')" class="bg-blue-600 text-white px-3 py-1.5 rounded-md text-xs font-bold hover:bg-blue-700 transition">Sebagian</button>
+                                @endif
                             @endif
-                        @else
-                            <span class="text-gray-400 italic">Selesai</span>
-                        @endif
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                        @if($inv->file_invoice)
-                            <button wire:click="downloadFile('{{ $inv->id_invoice }}')" class="text-gray-600 hover:text-black" title="Unduh File"><i class="fas fa-download"></i> File</button>
-                        @endif
 
-                        @if(!$isLocked)
-                            <button wire:click="edit('{{ $inv->id_invoice }}')" class="text-indigo-600 hover:text-indigo-900">Edit</button>
-                            <button wire:click="delete('{{ $inv->id_invoice }}')" wire:confirm="Yakin ingin menghapus invoice ini?" class="text-red-600 hover:text-red-900">Hapus</button>
-                        @else
-                            <span class="text-gray-400 cursor-not-allowed" title="Sudah ada pembayaran, data dikunci">Locked</span>
-                        @endif
+                            {{-- Tombol Detail --}}
+                            <button wire:click="showDetail('{{ $inv->id_invoice }}')" class="text-blue-600 hover:text-blue-900 bg-blue-50 px-2 py-1.5 rounded-md border border-blue-100 transition flex items-center gap-1" title="Lihat Detail">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                                Detail
+                            </button>
+
+                            {{-- Tombol PDF --}}
+                            <button wire:click="printInvoice('{{ $inv->id_invoice }}')" class="text-red-600 hover:text-red-900 bg-red-50 px-2 py-1.5 rounded-md border border-red-100 transition flex items-center gap-1" title="Cetak PDF">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                                PDF
+                            </button>
+
+                            @if(!$isLocked)
+                                {{-- Tombol Edit --}}
+                                <button wire:click="edit('{{ $inv->id_invoice }}')" class="text-indigo-600 hover:text-indigo-900 bg-indigo-50 px-2 py-1.5 rounded-md border border-indigo-100 transition flex items-center gap-1" title="Edit">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                                    Edit
+                                </button>
+                                
+                                {{-- Tombol Hapus --}}
+                                <button wire:click="delete('{{ $inv->id_invoice }}')" onclick="confirm('Yakin ingin menghapus?') || event.stopImmediatePropagation()" class="text-pink-600 hover:text-pink-900 bg-pink-50 px-2 py-1.5 rounded-md border border-pink-100 transition flex items-center gap-1" title="Hapus">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                    Hapus
+                                </button>
+                            @else
+                                {{-- Status Terkunci --}}
+                                <span class="inline-flex items-center gap-1 text-gray-500 text-xs font-bold bg-gray-50 px-3 py-1.5 rounded-md border border-gray-200">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                                    Terkunci
+                                </span>
+                            @endif
+                        </div>
                     </td>
                 </tr>
                 @empty
-                <tr><td colspan="7" class="px-6 py-4 text-center text-gray-500 italic">Data kosong.</td></tr>
+                <tr><td colspan="6" class="px-6 py-10 text-center text-gray-500 italic">Belum ada data invoice yang tercatat.</td></tr>
                 @endforelse
             </tbody>
         </table>
-        <div class="p-4">{{ $invoices->links() }}</div>
+        <div class="px-6 py-4 bg-gray-50 border-t border-gray-200">
+            {{ $invoices->links() }}
+        </div>
     </div>
+
+    
 
     {{-- Modal Form --}}
     @if($isOpen)
@@ -213,4 +260,98 @@
         </div>
     </div>
     @endif
+
+{{-- MODAL DETAIL --}}
+    @if($isDetailOpen && $selectedInvoice)
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div class="fixed inset-0 bg-gray-900 bg-opacity-50 transition-opacity" wire:click="closeDetail"></div>
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-4xl overflow-hidden transform transition-all z-10">
+            
+            <div class="bg-blue-600 px-6 py-4 flex justify-between items-center">
+                <h3 class="text-lg font-bold text-white">Detail Permohonan Pembayaran: {{ $selectedInvoice->id_invoice }}</h3>
+                <button wire:click="closeDetail" class="text-white hover:text-gray-200 transition">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+
+            <div class="p-6 max-h-[80vh] overflow-y-auto bg-gray-50">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+                        <h4 class="text-sm font-bold text-blue-700 uppercase tracking-wider mb-4 border-b pb-2">Rincian Tagihan</h4>
+                        <div class="space-y-3 text-sm">
+                            <div class="flex justify-between"><span class="text-gray-500">No. Inv Supplier:</span> <span class="font-semibold text-gray-800">{{ $selectedInvoice->nomor_invoice_supplier }}</span></div>
+                            <div class="flex justify-between"><span class="text-gray-500">Tanggal Invoice:</span> <span class="font-semibold text-gray-800">{{ \Carbon\Carbon::parse($selectedInvoice->tanggal_invoice)->format('d M Y') }}</span></div>
+                            <div class="flex justify-between"><span class="text-gray-500">Jatuh Tempo:</span> <span class="font-semibold text-red-600">{{ \Carbon\Carbon::parse($selectedInvoice->jatuh_tempo)->format('d M Y') }}</span></div>
+                            <div class="flex justify-between pt-2 border-t"><span class="text-gray-500 font-bold">Total Tagihan:</span> <span class="text-lg font-bold text-blue-700">Rp {{ number_format($selectedInvoice->total_tagihan, 0, ',', '.') }}</span></div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+                        <h4 class="text-sm font-bold text-blue-700 uppercase tracking-wider mb-4 border-b pb-2">Referensi Kontrak (PO)</h4>
+                        <div class="space-y-3 text-sm">
+                            <div class="flex justify-between"><span class="text-gray-500">No. Kontrak:</span> <span class="font-semibold text-gray-800">{{ $selectedInvoice->kontrak->nomor_kontrak }}</span></div>
+                            <div class="flex justify-between"><span class="text-gray-500">Supplier:</span> <span class="font-semibold text-gray-800 text-right">{{ $selectedInvoice->kontrak->supplier->nama_supplier }}</span></div>
+                            <div class="flex justify-between"><span class="text-gray-500">Nilai PO:</span> <span class="font-semibold text-gray-800">Rp {{ number_format($selectedInvoice->kontrak->total_nilai_kontrak, 0, ',', '.') }}</span></div>
+                            <div class="flex justify-between"><span class="text-gray-500 text-xs">Catatan:</span> <span class="text-xs text-gray-600 italic">{{ $selectedInvoice->catatan ?? '-' }}</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-6">
+                    <div class="bg-gray-50 px-5 py-3 border-b border-gray-200">
+                        <h4 class="text-sm font-bold text-gray-700">Item yang Dipesan</h4>
+                    </div>
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Material</th>
+                                <th class="px-5 py-3 text-center text-xs font-semibold text-gray-500 uppercase">Qty</th>
+                                <th class="px-5 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Harga</th>
+                                <th class="px-5 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                            @foreach($selectedInvoice->kontrak->detailKontrak as $item)
+                            <tr>
+                                <td class="px-5 py-3 text-sm text-gray-800">{{ $item->material->nama_material }}</td>
+                                <td class="px-5 py-3 text-sm text-center text-gray-700">{{ $item->jumlah_final }} {{ $item->material->satuan }}</td>
+                                <td class="px-5 py-3 text-sm text-right text-gray-700">Rp {{ number_format($item->harga_negosiasi_satuan, 0, ',', '.') }}</td>
+                                <td class="px-5 py-3 text-sm text-right font-semibold text-gray-900">Rp {{ number_format($item->jumlah_final * $item->harga_negosiasi_satuan, 0, ',', '.') }}</td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+                    <h4 class="text-sm font-bold text-gray-700 mb-4 flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                        Bukti Fisik Invoice Supplier
+                    </h4>
+                    @if($selectedInvoice->file_invoice)
+                        <div class="relative group">
+                            <img src="{{ asset('storage/' . $selectedInvoice->file_invoice) }}" class="max-h-[500px] mx-auto rounded-lg shadow-inner border border-gray-100 object-contain bg-gray-200">
+                            <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                <a href="{{ asset('storage/' . $selectedInvoice->file_invoice) }}" target="_blank" class="bg-black bg-opacity-50 text-white px-4 py-2 rounded-full text-sm font-medium">Lihat Ukuran Penuh</a>
+                            </div>
+                        </div>
+                    @else
+                        <div class="py-10 text-center bg-gray-50 border-2 border-dashed border-gray-200 rounded-lg">
+                            <p class="text-gray-400 italic">Tidak ada lampiran foto bukti invoice.</p>
+                        </div>
+                    @endif
+                </div>
+            </div>
+
+            <div class="bg-white px-6 py-4 border-t border-gray-100 flex justify-end">
+                <button wire:click="closeDetail" class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold px-6 py-2 rounded-lg transition-colors">
+                    Tutup
+                </button>
+            </div>
+        </div>
+    </div>
+    @endif
+
+   
+
 </div>

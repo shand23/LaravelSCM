@@ -111,7 +111,10 @@ class PenerimaanIndex extends Component
     public function create()
     {
         $this->resetForm();
-        $this->listPengirimanDO = Pengiriman::whereIn('status_pengiriman', ['Dalam Perjalanan', 'Pending'])->get();
+        
+        // Mengambil pengiriman yang statusnya Dalam Perjalanan ATAU Tiba di Lokasi (atau Pending)
+        $this->listPengirimanDO = Pengiriman::whereIn('status_pengiriman', ['Dalam Perjalanan', 'Tiba di Lokasi'])->get();
+        
         $this->isModalOpen = true;
     }
 

@@ -365,65 +365,96 @@ public function cetakDO($id_pengiriman)
         $this->isModalOpen = true;
     }
 
-  // 1. Fungsi Edit: Hanya untuk mengambil data tanggal & keterangan
 public function editDO($id)
-{
-    $this->resetForm();
-    $this->edit_id = $id;
-    
-    $do = Pengiriman::with('detailPengiriman')->find($id);
-    
-    if (!$do) {
-        session()->flash('error', 'Data tidak ditemukan.');
-        return;
+    {
+        $this->resetForm();
+        $this->edit_id = $id;
+        
+        $do = Pengiriman::with('detailPengiriman.detailKontrak.material')->find($id);
+        
+        if (!$do || $do->status_pengiriman != 'Pending') {
+            session()->flash('error', 'Data tidak ditemukan atau sudah diproses.');
+            return;
+        }
+
+        $this->id_kontrak = $do->id_kontrak;
+        $this->tipe_pengiriman = 'Bertahap';
+        
+        // Load data material yang masih ada sisa
+        $this->loadDataPO($do->id_kontrak);
+
+        $details = [];
+        foreach ($do->detailPengiriman as $det) {
+            
+            // --- PERBAIKAN ERROR UNDEFINED KEY ---
+            // Cek apakah barang ini sudah dimuat oleh loadDataPO atau belum
+            $sudahAda = collect($this->listMaterialPO)->contains('id_detail_kontrak', $det->id_detail_kontrak);
+
+            // Jika belum ada (karena sisa PO sudah 0), kita inject secara manual!
+            if (!$sudahAda) {
+                $materi = $det->detailKontrak;
+                if ($materi && $materi->material) {
+                    // Strukturnya sekarang SAMA PERSIS dengan fungsi loadDataPO Anda
+                    $this->listMaterialPO[] = [
+                        'id_material' => $materi->id_material,
+                        'id_detail_kontrak' => $det->id_detail_kontrak, // <--- Ini yang bikin error sebelumnya
+                        'nama_material' => $materi->material->nama_material,
+                        'satuan' => $materi->material->satuan ?? 'Unit',
+                        'sisa_kebutuhan' => $det->jumlah_dikirim // <--- Di sistem Anda pakai sisa_kebutuhan
+                    ];
+                }
+            }
+            // -------------------------------------
+
+            $details[] = [
+                'id_detail_kontrak' => $det->id_detail_kontrak,
+                'qty' => $det->jumlah_dikirim
+            ];
+        }
+
+        $this->jadwals = [[
+            'tanggal_berangkat' => \Carbon\Carbon::parse($do->tanggal_berangkat)->format('Y-m-d'),
+            'estimasi_tanggal_tiba' => \Carbon\Carbon::parse($do->estimasi_tanggal_tiba)->format('Y-m-d'),
+            'keterangan' => $do->keterangan,
+            'details' => $details
+        ]];
+
+        $this->isModalOpen = true;
     }
 
-    $this->id_kontrak = $do->id_kontrak;
-    $this->loadDataPO($do->id_kontrak);
-
-    // Memasukkan detail yang sudah ada ke form agar tampilan tidak kosong
-    $details = [];
-    foreach ($do->detailPengiriman as $det) {
-        $details[] = [
-            'id_detail_kontrak' => $det->id_detail_kontrak,
-            'qty' => $det->jumlah_dikirim
-        ];
-    }
-
-    $this->jadwals = [[
-        'tanggal_berangkat' => \Carbon\Carbon::parse($do->tanggal_berangkat)->format('Y-m-d'),
-        'estimasi_tanggal_tiba' => \Carbon\Carbon::parse($do->estimasi_tanggal_tiba)->format('Y-m-d'),
-        'keterangan' => $do->keterangan,
-        'details' => $details
-    ]];
-
-    $this->isModalOpen = true;
-}
-
-// 2. Fungsi Update: KHUSUS untuk menyimpan hasil edit (Tidak mengganggu store)
-public function update()
-{
-    $this->validate([
-        'jadwals.0.tanggal_berangkat' => 'required|date',
-        'jadwals.0.estimasi_tanggal_tiba' => 'required|date|after_or_equal:jadwals.0.tanggal_berangkat',
-    ]);
-
-    try {
-        $pengiriman = Pengiriman::find($this->edit_id);
-        $jadwal = $this->jadwals[0];
-
-        $pengiriman->update([
-            'tanggal_berangkat' => $jadwal['tanggal_berangkat'],
-            'estimasi_tanggal_tiba' => $jadwal['estimasi_tanggal_tiba'],
-            'keterangan' => $jadwal['keterangan'] ?? null,
+    // Fungsi khusus untuk menyimpan data yang diedit tanpa mengganggu store() asli
+    public function update()
+    {
+        $this->validate([
+            'jadwals.0.tanggal_berangkat' => 'required|date',
+            'jadwals.0.estimasi_tanggal_tiba' => 'required|date',
         ]);
 
-        session()->flash('message', 'Jadwal pengiriman berhasil diperbarui.');
-        $this->closeModal();
-    } catch (\Exception $e) {
-        session()->flash('error', 'Gagal memperbarui: ' . $e->getMessage());
+        try {
+            $jadwal = $this->jadwals[0];
+            
+            // Validasi tanggal
+            if (strtotime($jadwal['estimasi_tanggal_tiba']) < strtotime($jadwal['tanggal_berangkat'])) {
+                session()->flash('error', "Estimasi tiba tidak boleh sebelum tanggal berangkat!");
+                return;
+            }
+
+            $pengiriman = Pengiriman::find($this->edit_id);
+            
+            if ($pengiriman) {
+                $pengiriman->update([
+                    'tanggal_berangkat' => $jadwal['tanggal_berangkat'],
+                    'estimasi_tanggal_tiba' => $jadwal['estimasi_tanggal_tiba'],
+                    'keterangan' => $jadwal['keterangan'] ?? null,
+                ]);
+
+                session()->flash('message', 'Jadwal pengiriman berhasil diperbarui.');
+                $this->closeModal();
+            }
+        } catch (\Exception $e) {
+            session()->flash('error', 'Gagal memperbarui jadwal: ' . $e->getMessage());
+        }
     }
-}
     public function kirimDO($id)
     {
         $do = Pengiriman::find($id);

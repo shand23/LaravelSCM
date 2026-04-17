@@ -11,6 +11,7 @@ use App\Models\Pesanan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 #[Layout('layouts.app')]
 class KontrakIndex extends Component
@@ -258,4 +259,26 @@ class KontrakIndex extends Component
                                 ->get()
         ]);
     }
+
+    public function printPO($id)
+    {
+        // Ambil data kontrak lengkap dengan relasi supplier dan detail materialnya
+        $kontrak = Kontrak::with(['supplier', 'detailKontrak.material', 'pesanan'])->find($id);
+
+        if (!$kontrak) {
+            session()->flash('error', 'Data tidak ditemukan.');
+            return;
+        }
+
+        // Load view yang akan kita buat nanti
+        $pdf = Pdf::loadView('livewire.pengadaan.kontrak.pdf-po', [
+            'kontrak' => $kontrak
+        ])->setPaper('a4', 'portrait');
+
+        // Download file dengan nama nomor kontrak
+        return response()->streamDownload(function () use ($pdf) {
+            echo $pdf->stream();
+        }, 'PO-' . str_replace('/', '-', $kontrak->nomor_kontrak) . '.pdf');
+    }
+    
 }

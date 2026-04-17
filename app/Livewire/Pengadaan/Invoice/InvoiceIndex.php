@@ -9,15 +9,22 @@ use App\Models\InvoicePembelian;
 use App\Models\Kontrak;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
+use Barryvdh\DomPDF\Facade\Pdf; // 1. Tambahkan ini
 
 class InvoiceIndex extends Component
 {
-    use WithPagination;
+   use WithPagination;
     use WithFileUploads;
 
     public $isOpen = false;
     public $isEditMode = false;
     public $invoiceIdBeingUpdated = null;
+    
+    public $search = '';
+
+    // TAMBAHKAN DUA BARIS INI UNTUK MODAL DETAIL
+    public $isDetailOpen = false;
+    public $selectedInvoice = null;
 
     // Form fields
     public $id_kontrak, $nomor_invoice_supplier, $tanggal_invoice, $jatuh_tempo;
@@ -28,9 +35,19 @@ class InvoiceIndex extends Component
     public function render()
     {
         // 1. Ambil data invoice beserta relasi kontrak dan user pembuatnya
-        $invoices = InvoicePembelian::with(['kontrak', 'user'])->latest('created_at')->paginate(10);
+        $invoices = InvoicePembelian::with(['kontrak', 'user'])
+            ->when($this->search, function($query) {
+                $query->where('id_invoice', 'like', '%' . $this->search . '%')
+                      ->orWhere('nomor_invoice_supplier', 'like', '%' . $this->search . '%')
+                      ->orWhereHas('kontrak', function($q) {
+                          $q->where('nomor_kontrak', 'like', '%' . $this->search . '%');
+                      });
+            })
+            ->latest('created_at')
+            ->paginate(10);
         
         // 2. Filter PO/Kontrak: Hanya yang belum di-invoice + PO yang sedang diedit (jika mode edit)
+        
         $isEditMode = $this->isEditMode;
         $currentIdKontrak = $this->id_kontrak;
 
@@ -52,6 +69,68 @@ class InvoiceIndex extends Component
             'invoices' => $invoices,
             'kontrakList' => $kontrakList,
         ])->layout('layouts.app');
+    }
+
+    // 2. Tambahkan Fungsi untuk Modal Detail
+    public function showDetail($id)
+    {
+        $this->selectedInvoice = InvoicePembelian::with(['kontrak.supplier', 'kontrak.detailKontrak.material', 'user'])->find($id);
+        $this->isDetailOpen = true;
+    }
+
+    public function closeDetail()
+    {
+        $this->isDetailOpen = false;
+        $this->selectedInvoice = null;
+    }
+
+  public function printInvoice($id)
+    {
+        $invoice = InvoicePembelian::with(['kontrak.supplier', 'kontrak.detailKontrak.material'])->find($id);
+
+        if (!$invoice) {
+            session()->flash('error', 'Data tidak ditemukan.');
+            return;
+        }
+
+        $imageData = null;
+        $fileType = null;
+
+        if ($invoice->file_invoice) {
+            // Cek ekstensi file, pastikan ini BUKAN pdf. (PDF tidak bisa dijadikan tag <img>)
+            $extension = strtolower(pathinfo($invoice->file_invoice, PATHINFO_EXTENSION));
+            $fileType = $extension;
+
+            if (in_array($extension, ['jpg', 'jpeg', 'png', 'gif'])) {
+                
+                // Gunakan path absolut dari public
+                $path = public_path('storage/' . $invoice->file_invoice);
+                
+                // Fallback jika symlink belum dibuat (mencari ke folder laravel langsung)
+                if (!file_exists($path)) {
+                    $path = storage_path('app/public/' . $invoice->file_invoice);
+                }
+
+                if (file_exists($path)) {
+                    $type = pathinfo($path, PATHINFO_EXTENSION);
+                    $data = file_get_contents($path);
+                    $imageData = 'data:image/' . $type . ';base64,' . base64_encode($data);
+                }
+            }
+        }
+
+        // Aktifkan isRemoteEnabled agar DomPDF bisa me-render gambar dengan baik
+        $pdf = Pdf::setOptions(['isHtml5ParserEnabled' => true, 'isRemoteEnabled' => true])
+            ->loadView('livewire.pengadaan.invoice.pdf-invoice', [
+                'invoice' => $invoice,
+                'kontrak' => $invoice->kontrak,
+                'imageData' => $imageData,
+                'fileType'  => $fileType
+            ])->setPaper('a4', 'portrait');
+
+        return response()->streamDownload(function () use ($pdf) {
+            echo $pdf->stream();
+        }, 'Laporan-Tagihan-' . str_replace('/', '-', $invoice->id_invoice) . '.pdf');
     }
 
     public function updatedIdKontrak($value)
