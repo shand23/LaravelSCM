@@ -32,17 +32,33 @@ class PenggunaanIndex extends Component
     public $laporanTerpilih = null;
     public $detailItems = [];
 
- public function mount($id_permintaan = null) // Tambahkan parameter $id_permintaan
-{
-    $this->tanggal_laporan = date('Y-m-d');
+public function mount($id_permintaan = null) 
+    {
+        $this->tanggal_laporan = date('Y-m-d');
 
-    // Jika datang dari link "Buat Laporan" di halaman Permintaan
-    if ($id_permintaan) {
-        $this->id_permintaan_selected = $id_permintaan;
-        $this->updatedIdPermintaanSelected($id_permintaan); // Isi detail barang otomatis
-        $this->isModalOpen = true; // Langsung buka modal input
+        // Jika datang dari link "Buat Laporan" di halaman Permintaan
+        if ($id_permintaan) {
+            $assignedProyekIds = DB::table('penugasan_proyek')
+                ->where('id_user', Auth::id())
+                ->where('status_penugasan', 'Aktif')
+                ->pluck('id_proyek')
+                ->toArray();
+
+            // CEK KEAMANAN: Harus di proyeknya DAN harus dia yang buat permintaannya
+            $permintaanValid = PermintaanProyek::where('id_permintaan', $id_permintaan)
+                ->whereIn('id_proyek', $assignedProyekIds)
+                ->where('id_user', Auth::id()) // <--- TAMBAHAN FILTER AKUN LOGIN
+                ->exists();
+
+            if ($permintaanValid) {
+                $this->id_permintaan_selected = $id_permintaan;
+                $this->updatedIdPermintaanSelected($id_permintaan); 
+                $this->isModalOpen = true; 
+            } else {
+                session()->flash('error', 'Akses Ditolak: Ini bukan data permintaan Anda atau di luar proyek Anda.');
+            }
+        }
     }
-}
 
     public function updatingSearch()
     {
@@ -195,20 +211,34 @@ class PenggunaanIndex extends Component
 
     public function render()
     {
-        // 1. Ambil semua ID Permintaan yang sudah pernah dilaporkan (digunakan)
+        $assignedProyekIds = DB::table('penugasan_proyek')
+            ->where('id_user', Auth::id())
+            ->where('status_penugasan', 'Aktif')
+            ->pluck('id_proyek')
+            ->toArray();
+
         $usedPermintaanIds = PenggunaanMaterial::pluck('id_permintaan')->toArray();
 
-        return view('livewire.pelaksanaan.penggunaan-material.penggunaan-index', [
-            'listLaporan' => PenggunaanMaterial::with(['proyek'])
-                ->where('id_penggunaan', 'like', '%' . $this->search . '%')
-                ->orWhere('area_pekerjaan', 'like', '%' . $this->search . '%')
-                ->latest()
-                ->paginate(10),
+        // QUERY TABEL LAPORAN: Tetap menampilkan laporan di proyek tersebut
+        $listLaporan = PenggunaanMaterial::with(['proyek'])
+            ->whereIn('id_proyek', $assignedProyekIds) 
+            ->where(function($query) {
+                $query->where('id_penggunaan', 'like', '%' . $this->search . '%')
+                      ->orWhere('area_pekerjaan', 'like', '%' . $this->search . '%');
+            })
+            ->latest()
+            ->paginate(10);
             
-            // 2. Filter data permintaan, hanya tampilkan yang ID-nya tidak ada di array $usedPermintaanIds
-            'daftarPermintaan' => PermintaanProyek::whereIn('status_permintaan', ['Diproses Sebagian', 'Selesai'])
-                ->whereNotIn('id_permintaan', $usedPermintaanIds) 
-                ->get()
+        // QUERY DROPDOWN: HANYA tampilkan permintaan yang DIBUAT OLEH AKUN LOGIN INI
+        $daftarPermintaan = PermintaanProyek::whereIn('status_permintaan', ['Diproses Sebagian', 'Selesai'])
+            ->whereIn('id_proyek', $assignedProyekIds) 
+            ->where('id_user', Auth::id()) // <--- TAMBAHAN FILTER AKUN LOGIN
+            ->whereNotIn('id_permintaan', $usedPermintaanIds) 
+            ->get();
+
+        return view('livewire.pelaksanaan.penggunaan-material.penggunaan-index', [
+            'listLaporan' => $listLaporan,
+            'daftarPermintaan' => $daftarPermintaan
         ]);
     }
 }

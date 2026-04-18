@@ -22,14 +22,39 @@
     @endif
 
     {{-- FILTER & SEARCH --}}
-    <div class="bg-white p-4 mb-4 rounded-xl shadow-sm border border-gray-100 flex flex-col md:flex-row gap-4 justify-between items-center">
-        <div class="w-full md:w-1/3 relative">
-            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+    <div class="bg-white p-4 mb-4 rounded-xl shadow-sm border border-gray-100">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {{-- 1. Search Box --}}
+            <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                </div>
+                <input type="text" wire:model.live.debounce.300ms="search" 
+                       placeholder="Cari ID Permintaan..." 
+                       class="w-full pl-10 border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm border px-3 py-2 bg-gray-50">
             </div>
-            <input type="text" wire:model.live.debounce.300ms="search" 
-                   placeholder="Cari ID atau Nama Proyek..." 
-                   class="w-full pl-10 border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm border px-3 py-2 bg-gray-50">
+            
+            {{-- 2. Dropdown Filter Proyek --}}
+            <div>
+                <select wire:model.live="filterProyek" class="w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm border px-3 py-2 bg-gray-50 text-gray-700 font-medium">
+                    <option value="">-- Semua Proyek --</option>
+                    @foreach($listProyek as $proyek)
+                        <option value="{{ $proyek->id_proyek }}">{{ $proyek->nama_proyek }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            {{-- 3. Dropdown Filter Status --}}
+            <div>
+                <select wire:model.live="filterStatus" class="w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm border px-3 py-2 bg-gray-50 text-gray-700 font-medium">
+                    <option value="">-- Semua Status --</option>
+                    <option value="Menunggu Persetujuan">Menunggu Persetujuan</option>
+                    <option value="Diproses Sebagian">Diproses Sebagian</option>
+                    <option value="Disetujui PM">Disetujui PM</option>
+                    <option value="Selesai">Selesai</option>
+                    <option value="Ditolak">Ditolak</option>
+                </select>
+            </div>
         </div>
     </div>
 
@@ -62,7 +87,7 @@
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-100">
                     @forelse ($permintaans as $p)
-                        <tr class="hover:bg-blue-50/50 transition duration-150">
+                        <tr wire:key="row-{{ $p->id_permintaan }}" class="hover:bg-gray-50 transition-colors">
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-blue-600">
                                 {{ $p->id_permintaan }}
                             </td>
@@ -88,37 +113,40 @@
                                 </span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                {{-- PERBAIKAN: Menggunakan flex agar tombol sejajar sempurna --}}
                                 <div class="flex items-center justify-center gap-2">
+                                    {{-- 1. TOMBOL DETAIL (Selalu Tampil) --}}
                                     <button wire:click="show('{{ $p->id_permintaan }}')" class="text-indigo-600 hover:text-white hover:bg-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-lg border border-indigo-200 transition-colors font-semibold">
                                         Detail
                                     </button>
 
-                                    {{-- TOMBOL BARU: BUAT LAPORAN --}}
-                                    @if(in_array($p->status_permintaan, ['Diproses Sebagian', 'Selesai']))
-                                        {{-- PERBAIKAN: Menggunakan collect()->contains agar tidak error jika data berbentuk Collection --}}
-                                        @if(!collect($usedPermintaanIds)->contains($p->id_permintaan))
-                                            <a href="{{ route('pelaksanaan.penggunaan', ['id_permintaan' => $p->id_permintaan]) }}" 
-                                               class="bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1.5 rounded-lg font-bold transition-colors border border-emerald-600">
-                                                Buat Laporan
-                                            </a>
-                                        @else
-                                            <span class="bg-gray-100 text-gray-500 px-3 py-1.5 rounded-lg font-bold border border-gray-200">
-                                                ✓ Dilaporkan
-                                            </span>
-                                        @endif
-                                    @endif
-                                    
-                                    {{-- TOMBOL EDIT & DELETE JIKA STATUS MASIH MENUNGGU --}}
+                                    {{-- 2. TOMBOL EDIT (Hanya jika Menunggu Persetujuan) --}}
                                     @if($p->status_permintaan === 'Menunggu Persetujuan')
                                         <button wire:click="edit('{{ $p->id_permintaan }}')" class="text-amber-600 hover:text-white hover:bg-amber-500 bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-200 transition-colors font-semibold">
                                             Edit
                                         </button>
+                                    @endif
+
+                                    {{-- 3. TOMBOL HAPUS (Hanya jika Menunggu Persetujuan atau Ditolak) --}}
+                                    @if(in_array($p->status_permintaan, ['Menunggu Persetujuan', 'Ditolak']))
                                         <button wire:click="delete('{{ $p->id_permintaan }}')" 
                                                 wire:confirm="Yakin ingin menghapus permintaan material ini?" 
                                                 class="text-red-600 hover:text-white hover:bg-red-600 bg-red-50 px-3 py-1.5 rounded-lg border border-red-200 transition-colors font-semibold">
                                             Hapus
                                         </button>
+                                    @endif
+
+                                    {{-- 4. TOMBOL BUAT LAPORAN (Hanya jika Diproses Sebagian atau Selesai) --}}
+                                    @if(in_array($p->status_permintaan, ['Diproses Sebagian', 'Selesai']))
+                                        @if(!collect($usedPermintaanIds)->contains($p->id_permintaan))
+                                            <a href="{{ route('pelaksanaan.penggunaan', ['id_permintaan' => $p->id_permintaan]) }}" 
+                                               class="text-emerald-600 hover:text-white hover:bg-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200 transition-colors font-semibold inline-block">
+                                                Buat Laporan
+                                            </a>
+                                        @else
+                                            <span class="bg-gray-100 text-gray-500 px-3 py-1.5 rounded-lg font-bold border border-gray-200 cursor-not-allowed">
+                                                ✓ Dilaporkan
+                                            </span>
+                                        @endif
                                     @endif
                                 </div>
                             </td>
@@ -250,7 +278,6 @@
             <div class="bg-gray-50 px-6 py-4 border-b flex justify-between items-center">
                 <h2 class="text-lg font-bold text-gray-800 flex items-center gap-2">
                     <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                    {{-- PERBAIKAN: Menggunakan null-safe operator ?-> --}}
                     Detail Permintaan: <span class="text-blue-600">{{ $selectedPermintaan?->id_permintaan }}</span>
                 </h2>
                 <button wire:click="closeModal" class="text-gray-400 hover:text-red-500 bg-white hover:bg-red-50 rounded-lg p-1 transition-colors">
@@ -259,8 +286,19 @@
             </div>
             
             <div class="p-6">
-                {{-- Cek jika data ada untuk mencegah error saat animasi close --}}
                 @if($selectedPermintaan)
+                
+                {{-- TAMBAHAN: ALERT CATATAN PENOLAKAN (SKEMA 2) --}}
+                @if($selectedPermintaan->status_permintaan == 'Ditolak' && $selectedPermintaan->catatan_penolakan)
+                    <div class="mb-5 p-4 bg-red-50 border border-red-200 text-sm text-red-800 rounded-xl shadow-sm">
+                        <span class="font-bold flex items-center gap-2 mb-1">
+                            <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            Alasan Penolakan Manajemen:
+                        </span>
+                        <p class="ml-7 text-red-700 italic">"{{ $selectedPermintaan->catatan_penolakan }}"</p>
+                    </div>
+                @endif
+
                 <div class="grid grid-cols-2 gap-4 mb-6 bg-blue-50/50 p-4 rounded-xl border border-blue-100">
                     <div>
                         <p class="text-[10px] text-gray-500 uppercase font-bold tracking-widest mb-1">Proyek Target</p>
@@ -268,7 +306,13 @@
                     </div>
                     <div>
                         <p class="text-[10px] text-gray-500 uppercase font-bold tracking-widest mb-1">Status Peninjauan</p>
-                        <p class="font-bold text-gray-800">{{ $selectedPermintaan->status_permintaan }}</p>
+                        <span class="px-2 py-0.5 rounded-md text-xs font-bold 
+                            @if($selectedPermintaan->status_permintaan == 'Menunggu Persetujuan') bg-yellow-100 text-yellow-800
+                            @elseif($selectedPermintaan->status_permintaan == 'Disetujui PM') bg-green-100 text-green-800
+                            @elseif($selectedPermintaan->status_permintaan == 'Ditolak') bg-red-100 text-red-800
+                            @else bg-gray-200 text-gray-800 @endif">
+                            {{ $selectedPermintaan->status_permintaan }}
+                        </span>
                     </div>
                 </div>
                 
@@ -298,8 +342,16 @@
                 </div>
                 @endif
                 
-                <div class="flex justify-end mt-6 pt-4 border-t">
-                    <button wire:click="closeModal" class="bg-gray-800 hover:bg-gray-900 text-white font-bold px-6 py-2.5 rounded-lg shadow transition-colors">Tutup Jendela</button>
+                <div class="flex justify-end mt-6 pt-4 border-t space-x-3">
+                    <button wire:click="closeModal" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold px-6 py-2.5 rounded-lg shadow-sm transition-colors">Tutup Jendela</button>
+                    
+                    {{-- TAMBAHAN: TOMBOL REVISI (SKEMA 2) --}}
+                    @if($selectedPermintaan && $selectedPermintaan->status_permintaan == 'Ditolak')
+                        <button wire:click="revisiPermintaan('{{ $selectedPermintaan->id_permintaan }}')" class="bg-amber-500 hover:bg-amber-600 text-white font-bold px-6 py-2.5 rounded-lg shadow-sm transition-colors flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                            Revisi Sekarang
+                        </button>
+                    @endif
                 </div>
             </div>
         </div>

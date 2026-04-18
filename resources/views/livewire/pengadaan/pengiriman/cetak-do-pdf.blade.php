@@ -138,17 +138,19 @@
     <table class="signature-table">
         <tr>
             <td class="signature-box">
+                <p><strong>Dibuat Oleh,</strong></p>
+                <div class="signature-space"></div>
+                <p>( {{ Auth::user()->nama_lengkap }} ) </p>
+            </td>
+
+            <td class="signature-box">
                 <p><strong>Pihak Pengirim (Vendor/Ekspedisi)</strong></p>
                 <div class="signature-space"></div>
                 <p>___________________________</p>
             </td>
+           
             <td class="signature-box">
-                <p><strong>Mengetahui (Logistik)</strong></p>
-                <div class="signature-space"></div>
-                <p>___________________________</p>
-            </td>
-            <td class="signature-box">
-                <p><strong>Pihak Penerima (Proyek)</strong></p>
+                <p><strong>Pihak Penerima (Logistik)</strong></p>
                 <div class="signature-space"></div>
                 <p>___________________________</p>
             </td>

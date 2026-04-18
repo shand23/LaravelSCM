@@ -32,6 +32,7 @@ use App\Livewire\Pengadaan\Invoice\InvoiceIndex; // <--- Import baru untuk Invoi
 use App\Livewire\Pelaksanaan\PenggunaanMaterial\PenggunaanIndex as PelaksanaanPenggunaanIndex; 
 use App\Livewire\Pelaksanaan\Penugasan\PenugasanProyekIndex;
 
+use App\Livewire\Manajemen\PenggunaanMaterial\PenggunaanManajemenIndex;
 use Illuminate\Support\Facades\Route;
 
 // ================= ROOT & AUTH =================
@@ -62,6 +63,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         
         // --- HALAMAN APPROVAL PERMINTAAN MATERIAL ---
         Route::get('/approval', ApprovalIndex::class)->name('approval'); 
+
+        Route::get('/monitoring-penggunaan', PenggunaanManajemenIndex::class)->name('monitoring-penggunaan');
     });
 
     // ================= GRUP ROUTE TIM PELAKSANAAN =================

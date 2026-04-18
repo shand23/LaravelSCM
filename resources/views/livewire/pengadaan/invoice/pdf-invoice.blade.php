@@ -92,7 +92,7 @@
     <div style="margin-top: 30px;">
         <table width="100%">
             <tr>
-                <td width="33%" align="center">Dibuat Oleh,<br><br><br><br>( {{ Auth::user()->name }} )</td>
+                <td width="33%" align="center">Dibuat Oleh,<br><br><br><br>( {{ Auth::user()->nama_lengkap }} )</td>
                 <td width="33%" align="center">Diperiksa Oleh,<br><br><br><br>( ________________ )</td>
                 <td width="33%" align="center">Disetujui Keuangan,<br><br><br><br>( ________________ )</td>
             </tr>

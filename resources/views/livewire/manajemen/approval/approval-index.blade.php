@@ -77,7 +77,7 @@
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             <button wire:click="lihatDetail('{{ $item->id_permintaan }}')" class="text-indigo-600 hover:text-indigo-900 mr-3">Detail</button>
                             
-                            {{-- Sembunyikan tombol Approve jika statusnya bukan Menunggu Persetujuan --}}
+                            {{-- Sembunyikan tombol Approve langsung jika statusnya bukan Menunggu Persetujuan --}}
                             @if($item->status_permintaan == 'Menunggu Persetujuan')
                                 <button wire:click="approve('{{ $item->id_permintaan }}')" onclick="confirm('Yakin ingin menyetujui permintaan ini?') || event.stopImmediatePropagation()" class="text-green-600 hover:text-green-900 font-bold">Approve</button>
                             @endif
@@ -120,6 +120,14 @@
                     </div>
                 </div>
 
+                {{-- Tampilkan Catatan Penolakan Jika Ada (Saat Filter Ditolak) --}}
+                @if($permintaanDipilih->status_permintaan == 'Ditolak' && $permintaanDipilih->catatan_penolakan)
+                    <div class="mb-4 p-4 bg-red-50 border-l-4 border-red-500 rounded-r-md text-sm text-red-800">
+                        <span class="font-bold block mb-1">Catatan Penolakan Sebelumnya:</span>
+                        {{ $permintaanDipilih->catatan_penolakan }}
+                    </div>
+                @endif
+
                 <h4 class="font-medium text-gray-700 mb-2 text-sm">Daftar Material yang Diminta:</h4>
                 <div class="border border-gray-200 rounded-md overflow-hidden mb-4">
                     <table class="min-w-full divide-y divide-gray-200">
@@ -144,15 +152,41 @@
                     </table>
                 </div>
 
-                <div class="flex justify-end space-x-2 mt-6">
-                    <button wire:click="closeModal" class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded shadow-sm text-sm">Tutup</button>
+                {{-- AREA FOOTER MODAL (AKSI & FORM PENOLAKAN) --}}
+                <div class="mt-6 pt-4 border-t border-gray-100">
                     
-                    {{-- Tombol Aksi hanya muncul jika statusnya masih Menunggu --}}
-                    @if($permintaanDipilih->status_permintaan == 'Menunggu Persetujuan')
-                        <button wire:click="tolak('{{ $permintaanDipilih->id_permintaan }}')" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded shadow-sm text-sm">Tolak</button>
-                        <button wire:click="approve('{{ $permintaanDipilih->id_permintaan }}')" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded shadow-sm text-sm font-medium">Setujui Permintaan</button>
+                    @if($isRejecting)
+                        {{-- Form Input Catatan Penolakan --}}
+                        <div class="bg-red-50 p-4 rounded-lg border border-red-200">
+                            <label class="block text-sm font-semibold text-red-700 mb-2">Alasan Penolakan untuk Tim Pelaksana:</label>
+                            <textarea 
+                                wire:model="catatan_penolakan" 
+                                rows="3" 
+                                class="w-full border-red-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500 sm:text-sm p-2"
+                                placeholder="Tuliskan spesifikasi yang salah atau alasan permintaan ini ditolak..."></textarea>
+                            
+                            @error('catatan_penolakan') 
+                                <span class="text-red-600 text-xs mt-1 block font-medium">{{ $message }}</span> 
+                            @enderror
+
+                            <div class="flex justify-end space-x-2 mt-4">
+                                <button wire:click="cancelReject" class="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded text-sm hover:bg-gray-50">Batal</button>
+                                <button wire:click="tolak" class="bg-red-600 text-white px-4 py-2 rounded text-sm font-bold hover:bg-red-700 shadow-sm">Konfirmasi Tolak</button>
+                            </div>
+                        </div>
+                    @else
+                        {{-- Tombol Aksi Default --}}
+                        <div class="flex justify-end space-x-2">
+                            <button wire:click="closeModal" class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded shadow-sm text-sm">Tutup</button>
+                            
+                            @if($permintaanDipilih->status_permintaan == 'Menunggu Persetujuan')
+                                <button wire:click="confirmReject" class="bg-red-100 text-red-700 hover:bg-red-200 px-4 py-2 rounded shadow-sm text-sm font-semibold">Tolak Permintaan</button>
+                                <button wire:click="approve('{{ $permintaanDipilih->id_permintaan }}')" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded shadow-sm text-sm font-medium">Setujui Permintaan</button>
+                            @endif
+                        </div>
                     @endif
                 </div>
+
             </div>
         </div>
     </div>

@@ -6,7 +6,7 @@ use Livewire\Component;
 use Livewire\WithPagination;
 use Livewire\Attributes\Layout;
 use App\Models\PermintaanProyek;
-use App\Models\Proyek; // Pastikan Model Proyek sudah di-import
+use App\Models\Proyek;
 
 #[Layout('layouts.app')] 
 class ApprovalIndex extends Component
@@ -16,7 +16,7 @@ class ApprovalIndex extends Component
     // Properti untuk Pencarian dan Filter
     public $search = '';
     public $filterProyek = '';
-    public $filterStatus = 'Menunggu Persetujuan'; // Default yang tampil adalah yang butuh persetujuan
+    public $filterStatus = 'Menunggu Persetujuan'; 
     
     // Properti untuk Sorting
     public $sortColumn = 'tanggal_permintaan';
@@ -25,6 +25,10 @@ class ApprovalIndex extends Component
     // Properti untuk Modal Detail
     public $permintaanDipilih; 
     public $isModalOpen = false; 
+
+    // Properti Tambahan untuk Fitur Penolakan
+    public $isRejecting = false; // Flag untuk menampilkan form catatan
+    public $catatan_penolakan = ''; 
 
     // Reset halaman ke 1 jika user mengetik pencarian atau mengganti filter
     public function updatingSearch() { $this->resetPage(); }
@@ -86,31 +90,68 @@ class ApprovalIndex extends Component
                                         ->where('id_permintaan', $id)
                                         ->first();
         $this->isModalOpen = true;
+        
+        // Reset state penolakan setiap kali buka detail baru
+        $this->isRejecting = false;
+        $this->catatan_penolakan = '';
     }
 
     public function closeModal()
     {
         $this->isModalOpen = false;
         $this->permintaanDipilih = null;
+        $this->isRejecting = false;
+        $this->catatan_penolakan = '';
+    }
+
+    // Fungsi untuk memicu tampilan form input catatan
+    public function confirmReject()
+    {
+        $this->isRejecting = true;
+    }
+
+    // Fungsi untuk membatalkan proses penolakan di dalam modal
+    public function cancelReject()
+    {
+        $this->isRejecting = false;
+        $this->catatan_penolakan = '';
     }
 
     public function approve($id)
     {
         $permintaan = PermintaanProyek::where('id_permintaan', $id)->first();
         if ($permintaan) {
-            $permintaan->update(['status_permintaan' => 'Disetujui PM']); 
+            $permintaan->update([
+                'status_permintaan' => 'Disetujui PM',
+                'catatan_penolakan' => null // Hapus catatan jika sebelumnya pernah ditolak lalu disetujui
+            ]); 
             $this->closeModal();
             session()->flash('success', 'Permintaan #'.$id.' berhasil disetujui!');
         }
     }
 
-    public function tolak($id)
+    public function tolak()
     {
-        $permintaan = PermintaanProyek::where('id_permintaan', $id)->first();
-        if ($permintaan) {
-            $permintaan->update(['status_permintaan' => 'Ditolak']);
-            $this->closeModal();
-            session()->flash('error', 'Permintaan #'.$id.' telah ditolak.');
+        // Validasi catatan wajib diisi
+        $this->validate([
+            'catatan_penolakan' => 'required|min:5',
+        ], [
+            'catatan_penolakan.required' => 'Alasan penolakan wajib diisi.',
+            'catatan_penolakan.min' => 'Alasan penolakan minimal 5 karakter.',
+        ]);
+
+        if ($this->permintaanDipilih) {
+            $permintaan = PermintaanProyek::where('id_permintaan', $this->permintaanDipilih->id_permintaan)->first();
+            if ($permintaan) {
+                $permintaan->update([
+                    'status_permintaan' => 'Ditolak',
+                    'catatan_penolakan' => $this->catatan_penolakan
+                ]);
+                
+                $id = $permintaan->id_permintaan;
+                $this->closeModal();
+                session()->flash('error', 'Permintaan #'.$id.' telah ditolak dengan catatan.');
+            }
         }
     }
 }

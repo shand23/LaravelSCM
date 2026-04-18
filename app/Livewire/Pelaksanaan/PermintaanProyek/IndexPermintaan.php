@@ -20,6 +20,8 @@ class IndexPermintaan extends Component
 
     // Properti UI
     public $search = '';
+    public $filterStatus = '';
+    public $filterProyek = '';
     public $isModalOpen = false;
     public $isDetailOpen = false;
     public $sortColumn = 'created_at';
@@ -54,13 +56,15 @@ class IndexPermintaan extends Component
         $this->isModalOpen = true;
     }
 
+
+
     public function edit($id)
     {
         $this->resetErrorBag();
         $permintaan = PermintaanProyek::with('detailPermintaan')->findOrFail($id);
         
         // Keamanan ekstra: cegah edit jika status sudah berubah
-        if ($permintaan->status_permintaan !== 'Menunggu Persetujuan') {
+       if (!in_array($permintaan->status_permintaan, ['Menunggu Persetujuan', 'Ditolak'])) {
             session()->flash('error', 'Data tidak bisa diedit karena status sudah diproses.');
             return;
         }
@@ -87,12 +91,22 @@ class IndexPermintaan extends Component
     {
         $permintaan = PermintaanProyek::findOrFail($id);
         
-        if ($permintaan->status_permintaan === 'Menunggu Persetujuan') {
+        // PERBAIKAN: Izinkan penghapusan jika status Menunggu Persetujuan ATAU Ditolak
+        if (in_array($permintaan->status_permintaan, ['Menunggu Persetujuan', 'Ditolak'])) {
             $permintaan->delete(); // Pastikan relasi di DB menggunakan ON DELETE CASCADE
             session()->flash('message', 'Permintaan material berhasil dihapus.');
         } else {
-            session()->flash('error', 'Permintaan tidak dapat dihapus karena sudah diproses.');
+            session()->flash('error', 'Permintaan tidak dapat dihapus karena sedang diproses atau sudah selesai.');
         }
+    }
+
+    public function revisiPermintaan($id)
+    {
+        // Tutup modal detail
+        $this->isDetailOpen = false;
+        
+        // Panggil fungsi edit untuk membuka form revisi
+        $this->edit($id); 
     }
 
     public function closeModal()
@@ -149,7 +163,7 @@ class IndexPermintaan extends Component
         }
     }
 
-    public function store()
+  public function store()
     {
         $rules = [
             'id_proyek' => 'required',
@@ -165,7 +179,6 @@ class IndexPermintaan extends Component
         ];
 
         // Jika mode tambah, pastikan tanggal tidak kurang dari hari ini.
-        // Jika mode edit, validasi tanggal hari ini bisa diabaikan jika tanggal bawaan datanya memang di masa lalu (opsional, tapi disarankan tetap divalidasi ke depan).
         if ($this->batas_tanggal) {
             $rules['tanggal_permintaan'] = 'required|date|before_or_equal:' . $this->batas_tanggal;
             $messages['tanggal_permintaan.before_or_equal'] = 'Tanggal tidak boleh melebihi batas selesai proyek (' . date('d M Y', strtotime($this->batas_tanggal)) . ').';
@@ -175,6 +188,7 @@ class IndexPermintaan extends Component
 
         $this->validate($rules, $messages);
 
+        // Pengecekan Penugasan Proyek
         $isAssigned = DB::table('penugasan_proyek')
             ->where('id_user', Auth::id())
             ->where('id_proyek', $this->id_proyek)
@@ -188,11 +202,18 @@ class IndexPermintaan extends Component
 
         DB::transaction(function () {
             if ($this->isEditMode) {
-                // Proses Update
+                // ==========================================
+                // PROSES UPDATE / REVISI DATA
+                // ==========================================
                 $header = PermintaanProyek::findOrFail($this->edit_id);
+                
                 $header->update([
                     'id_proyek' => $this->id_proyek,
                     'tanggal_permintaan' => $this->tanggal_permintaan,
+                    
+                    // KEMBALIKAN STATUS & HAPUS CATATAN (Logika Skema 2)
+                    'status_permintaan' => 'Menunggu Persetujuan',
+                    'catatan_penolakan' => null 
                 ]);
 
                 // Hapus detail lama, insert detail baru
@@ -205,9 +226,11 @@ class IndexPermintaan extends Component
                         'jumlah_diminta' => $item['jumlah_diminta'],
                     ]);
                 }
-                session()->flash('message', 'Permintaan material berhasil diperbarui!');
+                session()->flash('message', 'Revisi permintaan material berhasil disimpan dan diajukan ulang!');
             } else {
-                // Proses Create
+                // ==========================================
+                // PROSES CREATE DATA BARU
+                // ==========================================
                 $header = PermintaanProyek::create([
                     'id_proyek' => $this->id_proyek,
                     'id_user' => Auth::id(),
@@ -226,12 +249,13 @@ class IndexPermintaan extends Component
             }
         });
 
+        // Reset Pagination dan tutup modal setelah transaksi database sukses
+        $this->resetPage(); 
         $this->closeModal();
     }
 
-    public function render()
+  public function render()
     {
-
         $usedPermintaanIds = PenggunaanMaterial::pluck('id_permintaan')->toArray();    
 
         $permintaans = PermintaanProyek::with(['proyek'])
@@ -242,9 +266,17 @@ class IndexPermintaan extends Component
                       $sq->where('nama_proyek', 'like', "%{$this->search}%"); 
                   });
             })
+            ->when($this->filterStatus, function($q) {
+                $q->where('status_permintaan', $this->filterStatus);
+            })
+            // ---> TAMBAHKAN FILTER PROYEK DI SINI <---
+            ->when($this->filterProyek, function($q) {
+                $q->where('id_proyek', $this->filterProyek);
+            })
             ->orderBy($this->sortColumn, $this->sortDirection)
             ->paginate(10);
 
+        // Data listProyek sudah ada di kode Anda sebelumnya, kita akan gunakan ini untuk dropdown
         $assignedProyekIds = DB::table('penugasan_proyek')
             ->where('id_user', Auth::id())
             ->where('status_penugasan', 'Aktif')
@@ -258,7 +290,7 @@ class IndexPermintaan extends Component
             'permintaans' => $permintaans,
             'listProyek' => $listProyek,
             'listMaterial' => Material::all(),
-            'usedPermintaanIds' => $usedPermintaanIds, // Kirim ke blade
+            'usedPermintaanIds' => $usedPermintaanIds
         ]);
     }
 }
