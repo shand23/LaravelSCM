@@ -8,7 +8,8 @@ use Livewire\Attributes\Layout;
 use App\Models\Pengiriman;
 use App\Models\PengirimanDetail;
 use App\Models\Kontrak;
-use App\Models\InvoicePembelian; // <-- TAMBAHKAN INI
+use App\Models\InvoicePembelian;
+use App\Models\user;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -372,6 +373,11 @@ public function editDO($id)
         
         $do = Pengiriman::with('detailPengiriman.detailKontrak.material')->find($id);
         
+        if ($do->id_user_pengadaan != Auth::user()->id_user) {
+            session()->flash('error', 'Akses Ditolak: Anda hanya dapat mengubah data pengiriman yang Anda buat sendiri.');
+            return;
+        }
+
         if (!$do || $do->status_pengiriman != 'Pending') {
             session()->flash('error', 'Data tidak ditemukan atau sudah diproses.');
             return;
@@ -467,6 +473,11 @@ public function editDO($id)
     public function deleteDO($id)
     {
         $do = Pengiriman::find($id);
+
+        if ($do->id_user_pengadaan != Auth::user()->id_user) {
+            session()->flash('error', 'Akses Ditolak: Anda tidak memiliki izin untuk menghapus data pengiriman ini.');
+            return;
+        }
         if ($do && $do->status_pengiriman == 'Pending') {
             $do->delete();
             session()->flash('message', "DO {$id} berhasil dihapus.");
@@ -638,7 +649,7 @@ public function editDO($id)
             ->toArray();
 
         return view('livewire.pengadaan.pengiriman.pengiriman-index', [
-            'listPengiriman' => Pengiriman::with(['kontrak', 'detailPengiriman.detailKontrak.material'])
+            'listPengiriman' => Pengiriman::with(['kontrak', 'detailPengiriman.detailKontrak.material','userPengadaan'])
                 ->orderBy('created_at', 'desc')
                 ->where('id_pengiriman', 'like', "%{$this->search}%")
                 ->paginate(10),

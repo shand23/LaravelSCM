@@ -103,6 +103,11 @@ class KontrakIndex extends Component
         $this->selected_id = $id;
         $kontrak = Kontrak::with('detailKontrak.material')->find($id);
         
+        if ($kontrak->id_user_pengadaan != Auth::user()->id_user) {
+            session()->flash('error', 'Akses Ditolak: Anda hanya dapat mengubah kontrak yang Anda buat sendiri.');
+            return;
+        }
+
         $this->id_pesanan = $kontrak->id_pesanan;
         $this->id_supplier = $kontrak->id_supplier;
         $this->tanggal_kontrak = $kontrak->tanggal_kontrak;
@@ -145,7 +150,7 @@ class KontrakIndex extends Component
                 $kontrak = Kontrak::create([
                     'id_pesanan' => $this->id_pesanan,
                     'id_supplier' => $this->id_supplier,
-                    'id_user_pengadaan' => Auth::id(),
+                    'id_user_pengadaan' => Auth::user()->id_user,
                     'nomor_kontrak' => "PO/" . date('Ymd') . "/" . strtoupper(Str::random(4)),
                     'tanggal_kontrak' => $this->tanggal_kontrak,
                     'total_harga_awal' => $this->total_harga_negosiasi,
@@ -201,29 +206,75 @@ class KontrakIndex extends Component
         } catch (\Exception $e) { session()->flash('error', $e->getMessage()); }
     }
 
-    public function delete($id) {
+   public function delete($id) {
         try {
-            DB::transaction(function () use ($id) {
-                $kontrak = Kontrak::find($id);
-                Pesanan::where('id_pesanan', $kontrak->id_pesanan)->update(['status_pesanan' => 'Proses Negosiasi']);
+            // 1. Cari data kontrak terlebih dahulu
+            $kontrak = Kontrak::findOrFail($id);
+
+            // 2. VALIDASI HAK AKSES
+            // Hanya pembuat (id_user_pengadaan) yang boleh menghapus
+            if ($kontrak->id_user_pengadaan != Auth::user()->id_user) {
+                session()->flash('error', 'Akses Ditolak: Anda tidak memiliki izin untuk menghapus kontrak ini.');
+                return;
+            }
+
+            // 3. PROSES PENGHAPUSAN DALAM TRANSAKSI
+            DB::transaction(function () use ($kontrak, $id) {
+                // Ambil data pesanan terkait untuk mendapatkan id_pengajuan
+                $pesanan = Pesanan::find($kontrak->id_pesanan);
+                
+                if ($pesanan) {
+                    // Update status Pesanan (RFQ) kembali ke Proses Negosiasi
+                    $pesanan->update(['status_pesanan' => 'Proses Negosiasi']);
+
+                    // Update status Pengajuan (PR) kembali ke "Proses RFQ"
+                    \App\Models\PengajuanPembelian::where('id_pengajuan', $pesanan->id_pengajuan)
+                        ->update(['status_pengajuan' => 'Proses RFQ']);
+                }
+
+                // Hapus Detail dan Data Kontrak
                 DetailKontrak::where('id_kontrak', $id)->delete();
                 $kontrak->delete();
             });
-            session()->flash('message', 'PO dihapus & RFQ dikembalikan ke antrean negosiasi.');
-        } catch (\Exception $e) { session()->flash('error', $e->getMessage()); }
-    }
 
+            session()->flash('message', 'PO dihapus. Status RFQ dan PR telah dikembalikan ke antrean.');
+        } catch (\Exception $e) { 
+            session()->flash('error', 'Gagal menghapus data: ' . $e->getMessage()); 
+        }
+    }
     public function markAsDisepakati($id) {
-        try {
-            $kontrak = Kontrak::findOrFail($id);
+    try {
+        // Ambil data kontrak beserta relasi pesanannya untuk mendapatkan ID Pengajuan
+        $kontrak = Kontrak::with('pesanan')->findOrFail($id);
+
+        // --- 1. VALIDASI HAK AKSES ---
+        // Pastikan hanya pembuat kontrak (id_user_pengadaan) yang bisa menyepakati
+        if ($kontrak->id_user_pengadaan != auth()->user()->id_user) {
+            session()->flash('error', 'Akses Ditolak: Anda hanya bisa menyepakati kontrak yang Anda buat sendiri.');
+            return;
+        }
+
+        // --- 2. PROSES UPDATE DENGAN TRANSAKSI ---
+        DB::transaction(function () use ($kontrak) {
+            // Update status kontrak menjadi Disepakati
             $kontrak->update([
                 'status_kontrak' => 'Disepakati'
             ]);
-            session()->flash('message', 'PO berhasil disepakati dan dikunci!');
-        } catch (\Exception $e) { 
-            session()->flash('error', 'Gagal mengupdate status: ' . $e->getMessage()); 
-        }
+
+            // Update status_pengajuan di tabel pengajuan_pembelian menjadi "PO Dibuat"
+            // Asumsi: Kontrak memiliki relasi 'pesanan' dan pesanan memiliki kolom 'id_pengajuan'
+            if ($kontrak->pesanan && $kontrak->pesanan->id_pengajuan) {
+                \App\Models\PengajuanPembelian::where('id_pengajuan', $kontrak->pesanan->id_pengajuan)
+                    ->update(['status_pengajuan' => 'PO Dibuat']);
+            }
+        });
+
+        session()->flash('message', 'PO berhasil disepakati dan dikunci! Status PR kini: PO Dibuat.');
+        
+    } catch (\Exception $e) { 
+        session()->flash('error', 'Gagal mengupdate status: ' . $e->getMessage()); 
     }
+}
 
     private function validateData() {
         return $this->validate([

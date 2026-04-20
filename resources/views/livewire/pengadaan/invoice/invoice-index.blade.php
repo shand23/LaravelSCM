@@ -97,25 +97,31 @@
                                 PDF
                             </button>
 
-                            @if(!$isLocked)
-                                {{-- Tombol Edit --}}
-                                <button wire:click="edit('{{ $inv->id_invoice }}')" class="text-indigo-600 hover:text-indigo-900 bg-indigo-50 px-2 py-1.5 rounded-md border border-indigo-100 transition flex items-center gap-1" title="Edit">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-                                    Edit
-                                </button>
-                                
-                                {{-- Tombol Hapus --}}
-                                <button wire:click="delete('{{ $inv->id_invoice }}')" onclick="confirm('Yakin ingin menghapus?') || event.stopImmediatePropagation()" class="text-pink-600 hover:text-pink-900 bg-pink-50 px-2 py-1.5 rounded-md border border-pink-100 transition flex items-center gap-1" title="Hapus">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                                    Hapus
-                                </button>
-                            @else
-                                {{-- Status Terkunci --}}
-                                <span class="inline-flex items-center gap-1 text-gray-500 text-xs font-bold bg-gray-50 px-3 py-1.5 rounded-md border border-gray-200">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
-                                    Terkunci
-                                </span>
-                            @endif
+                          @if(!$isLocked)
+    {{-- CEK HAK AKSES: Hanya pembuat yang bisa melihat tombol Edit & Hapus --}}
+    @if($inv->id_user == auth()->user()->id_user)
+        {{-- Tombol Edit --}}
+        <button wire:click="edit('{{ $inv->id_invoice }}')" class="text-indigo-600 hover:text-indigo-900 bg-indigo-50 px-2 py-1.5 rounded-md border border-indigo-100 transition flex items-center gap-1" title="Edit">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+            Edit
+        </button>
+        
+        {{-- Tombol Hapus --}}
+        <button wire:click="delete('{{ $inv->id_invoice }}')" onclick="confirm('Yakin ingin menghapus?') || event.stopImmediatePropagation()" class="text-pink-600 hover:text-pink-900 bg-pink-50 px-2 py-1.5 rounded-md border border-pink-100 transition flex items-center gap-1" title="Hapus">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+            Hapus
+        </button>
+    @else
+        {{-- Tampilan jika staf lain yang melihat (Bukan Pembuat) --}}
+        <span class="text-gray-400 italic text-xs px-2">Read-Only</span>
+    @endif
+@else
+    {{-- Status Terkunci (Misal: Sudah Lunas) --}}
+    <span class="inline-flex items-center gap-1 text-gray-500 text-xs font-bold bg-gray-50 px-3 py-1.5 rounded-md border border-gray-200">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+        Terkunci
+    </span>
+@endif
                         </div>
                     </td>
                 </tr>

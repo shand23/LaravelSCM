@@ -53,8 +53,20 @@
             <tbody class="divide-y divide-gray-200 bg-white">
                 @forelse($listPengiriman as $p)
                 <tr class="hover:bg-gray-50 transition-colors">
-                    <td class="px-6 py-4 text-sm font-bold text-blue-600">{{ $p->id_pengiriman }}</td>
-                    <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ $p->kontrak->nomor_kontrak ?? '-' }}</td>
+<td class="px-6 py-4 whitespace-nowrap">
+    {{-- Menampilkan ID Pengiriman/DO --}}
+    <div class="text-sm font-bold text-indigo-700">
+        {{ $p->id_pengiriman }}
+    </div>
+
+    {{-- Keterangan Pembuat di bawahnya --}}
+    <div class="flex items-center gap-1 mt-1">
+        
+        <span class="text-[10px] text-gray-500 italic">
+            Procurement: <span class="font-medium text-gray-700">{{ $p->userPengadaan->nama_lengkap ?? 'Tidak Diketahui' }}</span>
+        </span>
+    </div>
+</td>                    <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ $p->kontrak->nomor_kontrak ?? '-' }}</td>
                     <td class="px-6 py-4 text-sm text-gray-700">
                         <div class="flex flex-col">
                             <span class="font-medium"><span class="text-gray-400">Berangkat:</span> {{ \Carbon\Carbon::parse($p->tanggal_berangkat)->format('d M Y') }}</span>
@@ -101,14 +113,22 @@
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
                 Kirim
             </button>
-            <button wire:click="editDO('{{ $p->id_pengiriman }}')" class="text-amber-600 hover:text-amber-900 bg-amber-50 px-2.5 py-1.5 rounded-md border border-amber-200 transition" title="Edit">
-                Edit
-            </button>
-            <button wire:click="deleteDO('{{ $p->id_pengiriman }}')" 
-                    wire:confirm="Yakin ingin menghapus DO ini? Jadwal truk dan alokasi barang akan dibatalkan." 
-                    class="text-red-600 hover:text-red-900 bg-red-50 px-2.5 py-1.5 rounded-md border border-red-200 transition" title="Hapus">
-                Hapus
-            </button>
+           @if($p->id_user_pengadaan == auth()->user()->id_user)
+    {{-- Tombol Edit - Hanya muncul jika pembuatnya --}}
+    <button wire:click="editDO('{{ $p->id_pengiriman }}')" class="text-amber-600 hover:text-amber-900 bg-amber-50 px-2.5 py-1.5 rounded-md border border-amber-200 transition" title="Edit">
+        Edit
+    </button>
+
+    {{-- Tombol Hapus - Hanya muncul jika pembuatnya --}}
+    <button wire:click="deleteDO('{{ $p->id_pengiriman }}')" 
+            wire:confirm="Yakin ingin menghapus DO ini? Jadwal truk dan alokasi barang akan dibatalkan." 
+            class="text-red-600 hover:text-red-900 bg-red-50 px-2.5 py-1.5 rounded-md border border-red-200 transition" title="Hapus">
+        Hapus
+    </button>
+@else
+    {{-- Tampilan jika staf lain yang melihat --}}
+    <span class="text-gray-400 italic text-xs px-2">Read-Only</span>
+@endif
         @endif
 
         

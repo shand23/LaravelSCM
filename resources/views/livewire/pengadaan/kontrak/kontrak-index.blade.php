@@ -79,29 +79,42 @@
                                 Detail
                             </button>
 
-                            @if($k->status_kontrak !== 'Disepakati')
-                                {{-- Tombol Disepakati --}}
-                                <button wire:click="markAsDisepakati('{{ $k->id_kontrak }}')" wire:confirm="Yakin menyepakati PO ini? Data yang sudah disepakati TIDAK DAPAT diubah atau dihapus kembali." class="text-green-600 hover:text-green-900 bg-green-50 px-2 py-1.5 rounded-md border border-green-100 transition">
-                                    Sepakati
-                                </button>
-                                
-                                {{-- Tombol Edit --}}
-                                <button wire:click="edit('{{ $k->id_kontrak }}')" class="text-yellow-600 hover:text-yellow-900 bg-yellow-50 px-2 py-1.5 rounded-md border border-yellow-100 transition">
-                                    Edit
-                                </button>
-                                
-                                {{-- Tombol Delete --}}
-                                <button wire:click="delete('{{ $k->id_kontrak }}')" wire:confirm="Yakin ingin menghapus PO ini? RFQ terkait akan dikembalikan ke antrean negosiasi." class="text-red-600 hover:text-red-900 bg-red-50 px-2 py-1.5 rounded-md border border-red-100 transition">
-                                    Hapus
-                                </button>
-                            @else
-                                {{-- Tampilan jika sudah disepakati (Kunci & PDF) --}}
-                                <span class="inline-flex items-center gap-1 text-gray-500 text-xs font-bold bg-gray-50 px-3 py-1.5 rounded-md border border-gray-200">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
-                                    Terkunci
-                                </span>
-                                
-                            @endif
+                           @if($k->status_kontrak !== 'Disepakati')
+    {{-- CEK HAK AKSES: Hanya pembuat yang bisa melihat tombol aksi --}}
+    @if($k->id_user_pengadaan == auth()->user()->id_user)
+        {{-- Tombol Disepakati --}}
+        <button wire:click="markAsDisepakati('{{ $k->id_kontrak }}')" 
+                wire:confirm="Yakin menyepakati PO ini? Data yang sudah disepakati TIDAK DAPAT diubah atau dihapus kembali." 
+                class="text-green-600 hover:text-green-900 bg-green-50 px-2 py-1.5 rounded-md border border-green-100 transition">
+            Sepakati
+        </button>
+        
+        {{-- Tombol Edit --}}
+        <button wire:click="edit('{{ $k->id_kontrak }}')" 
+                class="text-yellow-600 hover:text-yellow-900 bg-yellow-50 px-2 py-1.5 rounded-md border border-yellow-100 transition">
+            Edit
+        </button>
+        
+        {{-- Tombol Delete --}}
+        <button wire:click="delete('{{ $k->id_kontrak }}')" 
+                wire:confirm="Yakin ingin menghapus PO ini? RFQ terkait akan dikembalikan ke antrean negosiasi." 
+                class="text-red-600 hover:text-red-900 bg-red-50 px-2 py-1.5 rounded-md border border-red-100 transition">
+            Hapus
+        </button>
+    @else
+        {{-- Tampilan jika staf lain yang melihat (Bukan Pembuat) --}}
+        <span class="text-gray-400 italic text-xs px-2">Read-Only</span>
+    @endif
+
+@else
+    {{-- Tampilan jika sudah disepakati (Semua user melihat ini jika status Terkunci) --}}
+    <span class="inline-flex items-center gap-1 text-gray-500 text-xs font-bold bg-gray-50 px-3 py-1.5 rounded-md border border-gray-200">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+        </svg>
+        Terkunci
+    </span>
+@endif
   {{-- Tombol PDF --}}
                                 <button wire:click="printPO('{{ $k->id_kontrak }}')" class="text-blue-600 hover:text-blue-900 bg-blue-50 px-3 py-1.5 rounded-md border border-blue-100 flex items-center gap-1 transition" title="Cetak / Download PO">
     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>

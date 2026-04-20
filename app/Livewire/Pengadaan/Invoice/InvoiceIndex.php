@@ -10,6 +10,7 @@ use App\Models\Kontrak;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
 use Barryvdh\DomPDF\Facade\Pdf; // 1. Tambahkan ini
+use Illuminate\Support\Facades\DB;
 
 class InvoiceIndex extends Component
 {
@@ -144,11 +145,37 @@ class InvoiceIndex extends Component
     }
 
     // --- FITUR ACTION CEPAT ---
-    public function setStatusLunas($id)
+   public function setStatusLunas($id)
     {
-        $invoice = InvoicePembelian::findOrFail($id);
-        $invoice->update(['status_invoice' => 'Lunas']);
-        session()->flash('message', 'Status Invoice diperbarui menjadi Lunas.');
+        try {
+            // 1. Ambil data invoice beserta relasi hingga ke Pengajuan
+            $invoice = InvoicePembelian::with(['kontrak.pesanan'])->findOrFail($id);
+
+            // 2. VALIDASI HAK AKSES
+            // Hanya pembuat invoice (id_user) yang bisa menandai sebagai Lunas
+            if ($invoice->id_user != Auth::user()->id_user) {
+                session()->flash('error', 'Akses Ditolak: Anda hanya dapat memproses invoice yang Anda buat sendiri.');
+                return;
+            }
+
+            // 3. PROSES UPDATE DENGAN TRANSAKSI
+            DB::transaction(function () use ($invoice) {
+                // Update status Invoice menjadi Lunas
+                $invoice->update(['status_invoice' => 'Lunas']);
+
+                // Update status Pengajuan (PR) menjadi Selesai
+                // Alur: Invoice -> Kontrak -> Pesanan -> id_pengajuan
+                if ($invoice->kontrak && $invoice->kontrak->pesanan && $invoice->kontrak->pesanan->id_pengajuan) {
+                    \App\Models\PengajuanPembelian::where('id_pengajuan', $invoice->kontrak->pesanan->id_pengajuan)
+                        ->update(['status_pengajuan' => 'Selesai']);
+                }
+            });
+
+            session()->flash('message', 'Status Invoice diperbarui menjadi Lunas dan PR telah Selesai.');
+
+        } catch (\Exception $e) {
+            session()->flash('error', 'Gagal memperbarui status: ' . $e->getMessage());
+        }
     }
 
     public function setStatusSebagian($id)
@@ -162,6 +189,11 @@ class InvoiceIndex extends Component
     public function delete($id)
     {
         $invoice = InvoicePembelian::findOrFail($id);
+
+        if ($invoice->id_user != Auth::user()->id_user) {
+            session()->flash('error', 'Akses Ditolak: Anda tidak memiliki izin untuk menghapus invoice ini.');
+            return;
+        }
 
         // Proteksi: Tidak bisa hapus jika sudah ada pembayaran
         if (in_array($invoice->status_invoice, ['Lunas', 'Dibayar Sebagian'])) {
@@ -181,6 +213,11 @@ class InvoiceIndex extends Component
     public function edit($id)
     {
         $invoice = InvoicePembelian::findOrFail($id);
+
+        if ($invoice->id_user != Auth::user()->id_user) {
+            session()->flash('error', 'Akses Ditolak: Anda hanya dapat mengubah invoice yang Anda buat sendiri.');
+            return;
+        }
 
         // Proteksi: Tidak bisa edit jika sudah ada pembayaran
         if (in_array($invoice->status_invoice, ['Lunas', 'Dibayar Sebagian'])) {
@@ -239,6 +276,8 @@ class InvoiceIndex extends Component
             'total_tagihan' => 'required|numeric|min:0',
         ];
 
+
+        
         // File invoice hanya wajib diisi saat create baru
         if (!$this->isEditMode) {
             $rules['file_invoice_upload'] = 'required|file|mimes:pdf,jpg,jpeg,png|max:2048';
