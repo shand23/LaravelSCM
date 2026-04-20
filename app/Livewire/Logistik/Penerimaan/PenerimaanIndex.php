@@ -38,11 +38,27 @@ class PenerimaanIndex extends Component
     // Array Detail Pengecekan
     public $detailTerima = [];
 
-    public function mount()
-    {
-        $this->tanggal_terima = date('Y-m-d');
-        $this->listRak = DB::table('master_lokasi_rak')->get();
+    // app/Livewire/Logistik/Penerimaan/PenerimaanIndex.php
+
+public function mount()
+{
+    $this->tanggal_terima = date('Y-m-d');
+    $this->listRak = DB::table('master_lokasi_rak')->get();
+
+    // LOGIKA BARU: Tangkap parameter dari Notifikasi
+    $idFromNotif = request()->query('id_pengiriman');
+    
+    if ($idFromNotif) {
+        // 1. Set ID Pengiriman
+        $this->id_pengiriman = $idFromNotif;
+        
+        // 2. Buka Modal Otomatis
+        $this->isModalOpen = true;
+        
+        // 3. Panggil fungsi untuk memuat detail material (fungsi ini sudah ada di file Anda)
+        $this->updatedIdPengiriman($idFromNotif);
     }
+}
 
     // Fungsi Tarik Data & Set Default
     public function updatedIdPengiriman($value)

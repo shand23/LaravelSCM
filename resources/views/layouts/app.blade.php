@@ -20,7 +20,8 @@
 
             <div class="relative flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
                 
-                <x-headbar />
+                {{-- PERUBAHAN DI SINI: Panggil komponen Livewire --}}
+                <livewire:notification-logistik />
 
                 @if (isset($header))
                     <header class="bg-white shadow-sm z-10">
@@ -35,5 +36,6 @@
                 </main>
             </div>
         </div>
+        
     </body>
 </html>
