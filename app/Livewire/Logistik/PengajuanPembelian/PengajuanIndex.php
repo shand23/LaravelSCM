@@ -60,15 +60,17 @@ class PengajuanIndex extends Component
         $this->isModalOpen = true;
     }
 
-    public function edit($id)
+   public function edit($id)
     {
         $this->resetErrorBag();
         $pengajuan = PengajuanPembelian::with('detailPengajuan.material')->findOrFail($id);
 
-        if ($pengajuan->status_pengajuan !== 'Menunggu Pengadaan') {
-            session()->flash('error', 'Data tidak bisa diedit karena sudah diproses oleh Pengadaan.');
-            return;
-        }
+        // MODIFIKASI DISINI: Cek Kepemilikan (Syarat 1) dan Status (Syarat 2)
+        // Saya tambahkan 'Menunggu Pengadaan' ke dalam array untuk menyesuaikan dengan kode asli Anda
+       if ($pengajuan->id_user_logistik != Auth::user()->id_user || !in_array($pengajuan->status_pengajuan, ['Draft', 'Menunggu', 'Menunggu Pengadaan'])) {
+    session()->flash('error', 'Akses Ditolak: Anda hanya bisa mengedit PR milik sendiri yang belum diproses oleh Pengadaan.');
+    return;
+}
 
         $this->isEditMode = true;
         $this->edit_id = $id;
@@ -83,7 +85,7 @@ class PengajuanIndex extends Component
                 
                 $penugasan = DB::table('penugasan_proyek')
                     ->where('id_proyek', $permintaan->id_proyek)
-                    ->where('id_user', $permintaan->id_user_mandor)
+                    ->where('id_user', $permintaan->id_user_logistik)
                     ->orderBy('tanggal_selesai', 'desc')
                     ->first();
                     
@@ -109,7 +111,6 @@ class PengajuanIndex extends Component
 
         $this->isModalOpen = true;
     }
-
     // Fungsi otomatis menarik detail material & setup batas tanggal saat proyek dipilih
     public function updatedReferensiIdPermintaan($id)
     {
@@ -126,7 +127,7 @@ class PengajuanIndex extends Component
                 // Cari tanggal selesai proyek dari tabel penugasan
                 $penugasan = DB::table('penugasan_proyek')
                     ->where('id_proyek', $permintaan->id_proyek)
-                    ->where('id_user', $permintaan->id_user_mandor)
+                    ->where('id_user', $permintaan->id_user_logistik)
                     ->orderBy('tanggal_selesai', 'desc')
                     ->first();
                     
@@ -197,10 +198,18 @@ class PengajuanIndex extends Component
         $this->items = array_values($this->items); 
     }
 
-    public function delete($id)
+   public function delete($id)
     {
         $pengajuan = PengajuanPembelian::findOrFail($id);
-        if ($pengajuan->status_pengajuan === 'Menunggu Pengadaan') {
+
+        // MODIFIKASI (Syarat 1): Cek apakah user yang login adalah pembuat PR ini
+     // Gunakan Auth::user()->id_user dan !=
+if ($pengajuan->id_user_logistik != Auth::user()->id_user) {
+    session()->flash('error', 'Akses Ditolak: Anda hanya bisa menghapus PR milik Anda sendiri.');
+    return;
+} 
+        // MODIFIKASI (Syarat 2): Cek status (mengakomodasi Draft, Menunggu, & Menunggu Pengadaan)
+        if (in_array($pengajuan->status_pengajuan, ['Draft', 'Menunggu', 'Menunggu Pengadaan'])) {
             DB::transaction(function () use ($pengajuan) {
                 if ($pengajuan->referensi_id_permintaan) {
                     PermintaanProyek::where('id_permintaan', $pengajuan->referensi_id_permintaan)
@@ -210,7 +219,7 @@ class PengajuanIndex extends Component
             });
             session()->flash('message', 'Pengajuan Pembelian (PR) berhasil dibatalkan.');
         } else {
-            session()->flash('error', 'PR tidak dapat dihapus karena sudah diproses.');
+            session()->flash('error', 'PR tidak dapat dihapus karena sudah diproses oleh Pengadaan.');
         }
     }
 
@@ -273,15 +282,17 @@ class PengajuanIndex extends Component
                         'id_pengajuan' => $header->id_pengajuan,
                         'id_material' => $item['id_material'],
                         'jumlah_minta_beli' => $item['jumlah_minta_beli'],
+                       
                     ]);
                 }
                 session()->flash('message', 'Pengajuan Pembelian (PR) berhasil diperbarui!');
             } else {
                 $header = PengajuanPembelian::create([
-                    'id_user_logistik' => Auth::id(),
+                    'id_user_logistik' =>Auth::user()->id_user,
                     'referensi_id_permintaan' => $this->referensi_id_permintaan ?: null,
                     'tanggal_pengajuan' => $this->tanggal_pengajuan,
                     'status_pengajuan' => 'Menunggu Pengadaan',
+                
                 ]);
 
                 foreach ($this->items as $item) {
@@ -289,6 +300,7 @@ class PengajuanIndex extends Component
                         'id_pengajuan' => $header->id_pengajuan, 
                         'id_material' => $item['id_material'],
                         'jumlah_minta_beli' => $item['jumlah_minta_beli'],
+                        
                     ]);
                 }
 
@@ -306,7 +318,7 @@ class PengajuanIndex extends Component
 
     public function render()
     {
-        $pengajuans = PengajuanPembelian::with(['permintaanProyek.proyek'])
+        $pengajuans = PengajuanPembelian::with(['permintaanProyek.proyek','user'])
             ->where(function($q) {
                 $q->where('id_pengajuan', 'like', "%{$this->search}%")
                   ->orWhere('referensi_id_permintaan', 'like', "%{$this->search}%");

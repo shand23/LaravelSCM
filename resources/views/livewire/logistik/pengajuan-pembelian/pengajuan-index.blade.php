@@ -43,7 +43,15 @@
             <tbody class="divide-y divide-gray-200">
                 @forelse ($pengajuans as $pr)
                     <tr class="hover:bg-gray-50">
-                        <td class="px-6 py-4 text-sm font-bold text-blue-600">{{ $pr->id_pengajuan }}</td>
+                        {{-- Bagian ID PR & Keterangan User --}}
+                    <td class="px-6 py-4">
+    <div class="text-sm font-bold text-blue-600">{{ $pr->id_pengajuan }}</div>
+    <div class="text-xs text-gray-500 mt-1">
+        Pembuat: <span class="font-medium text-gray-700">
+            {{ $pr->user->nama_lengkap ?? 'User Tidak Ditemukan' }}
+        </span>
+    </div>
+</td>
                         <td class="px-6 py-4 text-sm text-gray-600">{{ $pr->referensi_id_permintaan ?? 'RESTOK GUDANG' }}</td>
                         <td class="px-6 py-4 text-sm text-gray-900">{{ $pr->permintaanProyek->proyek->nama_proyek ?? '-' }}</td>
                         <td class="px-6 py-4 text-sm">
@@ -63,10 +71,21 @@
                         <td class="px-6 py-4 text-center text-sm font-medium">
                             <button wire:click="show('{{ $pr->id_pengajuan }}')" class="text-indigo-600 hover:text-indigo-900 bg-indigo-50 px-3 py-1 rounded-md border border-indigo-200 mx-1">Detail</button>
                             
-                            @if($pr->status_pengajuan === 'Menunggu Pengadaan')
-                                <button wire:click="edit('{{ $pr->id_pengajuan }}')" class="text-yellow-600 hover:text-yellow-900 bg-yellow-50 px-3 py-1 rounded-md border border-yellow-200 mx-1">Edit</button>
-                                <button wire:click="delete('{{ $pr->id_pengajuan }}')" wire:confirm="Yakin membatalkan PR ini?" class="text-red-600 hover:text-red-900 bg-red-50 px-3 py-1 rounded-md border border-red-200 mx-1">Hapus</button>
-                            @endif
+                            {{-- Cek: Apakah saya pemiliknya DAN apakah statusnya masih boleh diedit/hapus? --}}
+@if($pr->id_user_logistik == auth()->user()->id_user && in_array($pr->status_pengajuan, ['Draft', 'Menunggu', 'Menunggu Pengadaan']))
+    <button wire:click="edit('{{ $pr->id_pengajuan }}')" 
+            class="text-yellow-600 hover:text-yellow-900 bg-yellow-50 px-3 py-1 rounded-md border border-yellow-200 mx-1">
+        Edit
+    </button>
+    <button wire:click="delete('{{ $pr->id_pengajuan }}')" 
+            wire:confirm="Yakin membatalkan PR ini?" 
+            class="text-red-600 hover:text-red-900 bg-red-50 px-3 py-1 rounded-md border border-red-200 mx-1">
+        Hapus
+    </button>
+@else
+    {{-- Opsional: Jika bukan pemilik atau status sudah diproses, tombol tidak muncul atau bisa beri tanda --}}
+    <span class="text-gray-400 text-xs italic">Akses Terkunci</span>
+@endif
                         </td>
                     </tr>
                 @empty

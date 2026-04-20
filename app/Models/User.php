@@ -24,6 +24,7 @@ class User extends Authenticatable
         'ROLE',
         'jabatan',
         'status_user',
+        'can_manage_master',
     ];
 
     protected $hidden = [

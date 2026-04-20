@@ -5,10 +5,14 @@
             <h1 class="text-2xl font-bold text-gray-800">Master Lokasi Rak</h1>
             <p class="text-sm text-gray-500 mt-1">Kelola daftar gudang, rak, dan area penyimpanan</p>
         </div>
+        
+        {{-- TOMBOL TAMBAH DENGAN IZIN --}}
+        @if(auth()->user()->can_manage_master)
         <button wire:click="create" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-2.5 rounded-lg shadow-sm flex items-center gap-2 transition-colors">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
             Tambah Lokasi
         </button>
+        @endif
     </div>
 
     {{-- ALERTS --}}
@@ -19,84 +23,100 @@
         </div>
     @endif
 
-    {{-- SEARCH --}}
-    <div class="mb-4 bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
-        <div class="w-full md:w-1/3 relative">
-            <input type="text" wire:model.live="search" placeholder="Cari ID, Nama Lokasi, atau Area..." class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-sm">
-            <svg class="w-5 h-5 text-gray-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+    @if (session()->has('error'))
+        <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4 shadow-sm flex items-center gap-3">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            {{ session('error') }}
+        </div>
+    @endif
+
+    {{-- SEARCH & FILTER --}}
+    <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-6 flex flex-wrap items-center gap-4">
+        <div class="relative flex-1 min-w-[300px]">
+            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            </span>
+            <input wire:model.live.debounce.300ms="search" type="text" placeholder="Cari nama rak atau area..." class="pl-10 w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500 shadow-sm transition-all text-sm">
         </div>
     </div>
 
     {{-- TABLE --}}
     <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">ID Lokasi</th>
-                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Nama Lokasi</th>
-                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Area</th>
-                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Keterangan</th>
-                        <th class="px-6 py-4 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Aksi</th>
+        <table class="w-full text-left border-collapse">
+            <thead class="bg-gray-50 border-b border-gray-100">
+                <tr>
+                    <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">ID Lokasi</th>
+                    <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Nama Rak / Lokasi</th>
+                    <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Area</th>
+                    <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Keterangan</th>
+                    
+                    {{-- HEADER AKSI DENGAN IZIN --}}
+                    @if(auth()->user()->can_manage_master)
+                    <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-center">Aksi</th>
+                    @endif
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                @forelse ($listLokasi as $lokasi)
+                    <tr class="hover:bg-gray-50 transition-colors">
+                        <td class="px-6 py-4">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                {{ $lokasi->id_lokasi }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-sm font-semibold text-gray-800">{{ $lokasi->nama_lokasi }}</td>
+                        <td class="px-6 py-4 text-sm text-gray-600">{{ $lokasi->AREA }}</td>
+                        <td class="px-6 py-4 text-sm text-gray-500 italic">{{ $lokasi->keterangan ?: '-' }}</td>
+                        
+                        {{-- TOMBOL AKSI DENGAN IZIN --}}
+                        @if(auth()->user()->can_manage_master)
+                        <td class="px-6 py-4 text-center">
+                            <div class="flex justify-center gap-2">
+                                <button wire:click="edit('{{ $lokasi->id_lokasi }}')" class="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors" title="Edit">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                                </button>
+                                <button wire:click="delete('{{ $lokasi->id_lokasi }}')" wire:confirm="Hapus lokasi rak ini?" class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Hapus">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                </button>
+                            </div>
+                        </td>
+                        @endif
                     </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-200 bg-white">
-                    @forelse ($listLokasi as $lokasi)
-                        <tr class="hover:bg-gray-50 transition-colors">
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <span class="font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-md text-xs">{{ $lokasi->id_lokasi }}</span>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                {{ $lokasi->nama_lokasi }}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                <span class="px-2 py-1 bg-purple-100 text-purple-700 rounded-md font-medium text-xs">{{ $lokasi->area }}</span>
-                            </td>
-                            <td class="px-6 py-4 text-sm text-gray-500 truncate max-w-xs">
-                                {{ $lokasi->keterangan ?? '-' }}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
-                                <button wire:click="edit('{{ $lokasi->id_lokasi }}')" class="text-blue-600 hover:text-blue-900 mx-2 transition-colors">Edit</button>
-                                <button onclick="confirm('Yakin ingin menghapus lokasi rak ini?') || event.stopImmediatePropagation()" wire:click="delete('{{ $lokasi->id_lokasi }}')" class="text-red-600 hover:text-red-900 mx-2 transition-colors">Hapus</button>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="5" class="px-6 py-8 text-center text-gray-500">
-                                <div class="flex flex-col items-center justify-center">
-                                    <svg class="w-12 h-12 text-gray-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
-                                    <span class="text-sm">Data lokasi rak tidak ditemukan.</span>
-                                </div>
-                            </td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-        <div class="px-6 py-4 border-t border-gray-100 bg-gray-50">
+                @empty
+                    <tr>
+                        <td colspan="{{ auth()->user()->can_manage_master ? 5 : 4 }}" class="px-6 py-12 text-center text-gray-400 italic">
+                            Data lokasi tidak ditemukan.
+                        </td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
+        
+        <div class="px-6 py-4 border-t border-gray-100">
             {{ $listLokasi->links() }}
         </div>
     </div>
 
-    {{-- MODAL --}}
+    {{-- MODAL FORM --}}
     @if($isModalOpen)
-    <div class="fixed inset-0 z-50 flex items-center justify-center overflow-x-hidden overflow-y-auto outline-none focus:outline-none">
-        <div class="fixed inset-0 bg-gray-900/50 backdrop-blur-sm transition-opacity" wire:click="closeModal"></div>
-        <div class="relative w-full max-w-lg mx-auto z-50 p-4">
-            <div class="bg-white rounded-2xl shadow-xl relative flex flex-col w-full outline-none focus:outline-none overflow-hidden">
-                <div class="flex items-center justify-between p-5 border-b border-gray-100 bg-gray-50">
+    <div class="fixed inset-0 z-50 overflow-y-auto">
+        <div class="flex items-center justify-center min-h-screen p-4 text-center">
+            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 backdrop-blur-sm transition-opacity" wire:click="closeModal"></div>
+
+            <div class="inline-block w-full max-w-lg bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all align-middle">
+                <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
                     <h3 class="text-lg font-bold text-gray-800">
-                        {{ $edit_id ? 'Edit Lokasi Rak' : 'Tambah Lokasi Rak Baru' }}
+                        {{ $edit_id ? 'Update Lokasi Rak' : 'Tambah Lokasi Rak Baru' }}
                     </h3>
-                    <button wire:click="closeModal" class="text-gray-400 hover:text-gray-600 transition-colors">
+                    <button wire:click="closeModal" class="text-gray-400 hover:text-gray-600">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </button>
                 </div>
-                
+
                 <div class="p-6 space-y-4">
                     <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-1">Nama Lokasi / Rak <span class="text-red-500">*</span></label>
-                        <input type="text" wire:model="nama_lokasi" placeholder="Contoh: Rak A1" class="w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500 shadow-sm text-sm">
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Nama Rak / Lokasi <span class="text-red-500">*</span></label>
+                        <input type="text" wire:model="nama_lokasi" placeholder="Contoh: RAK-001" class="w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500 shadow-sm text-sm">
                         @error('nama_lokasi') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
                     </div>
                     
@@ -116,8 +136,8 @@
                     <button wire:click="closeModal" class="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
                         Batal
                     </button>
-                    <button wire:click="store" class="px-5 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 shadow-sm transition-colors">
-                        Simpan Data
+                    <button wire:click="store" class="px-5 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors shadow-sm">
+                        Simpan Perubahan
                     </button>
                 </div>
             </div>

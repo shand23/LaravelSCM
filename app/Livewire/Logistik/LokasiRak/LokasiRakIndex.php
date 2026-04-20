@@ -6,6 +6,7 @@ use Livewire\Component;
 use Livewire\WithPagination;
 use Livewire\Attributes\Layout;
 use App\Models\MasterLokasiRak;
+use Illuminate\Support\Facades\Auth; // <--- Tambahkan Facade Auth
 
 #[Layout('layouts.app')]
 class LokasiRakIndex extends Component
@@ -25,6 +26,18 @@ class LokasiRakIndex extends Component
         'keterangan' => 'nullable',
     ];
 
+    /**
+     * Fungsi Helper Keamanan Backend
+     */
+    private function checkPermission()
+    {
+        if (!Auth::user()->can_manage_master) {
+            session()->flash('error', 'Akses Ditolak: Anda tidak memiliki izin untuk mengelola Data Master.');
+            return false;
+        }
+        return true;
+    }
+
     public function render()
     {
         $lokasi = MasterLokasiRak::where('nama_lokasi', 'like', '%' . $this->search . '%')
@@ -40,12 +53,16 @@ class LokasiRakIndex extends Component
 
     public function create()
     {
+        if (!$this->checkPermission()) return; // Cek Izin
+
         $this->resetForm();
         $this->isModalOpen = true;
     }
 
     public function edit($id)
     {
+        if (!$this->checkPermission()) return; // Cek Izin
+
         $data = MasterLokasiRak::findOrFail($id);
         $this->edit_id = $data->id_lokasi;
         $this->nama_lokasi = $data->nama_lokasi;
@@ -57,6 +74,8 @@ class LokasiRakIndex extends Component
 
     public function store()
     {
+        if (!$this->checkPermission()) return; // Cek Izin
+        
         $this->validate();
 
         MasterLokasiRak::updateOrCreate(
@@ -74,6 +93,8 @@ class LokasiRakIndex extends Component
 
     public function delete($id)
     {
+        if (!$this->checkPermission()) return; // Cek Izin
+
         MasterLokasiRak::findOrFail($id)->delete();
         session()->flash('message', 'Lokasi Rak berhasil dihapus!');
     }
@@ -90,6 +111,6 @@ class LokasiRakIndex extends Component
         $this->nama_lokasi = '';
         $this->AREA = '';
         $this->keterangan = '';
-        $this->resetErrorBag();
+        $this->resetValidation();
     }
 }

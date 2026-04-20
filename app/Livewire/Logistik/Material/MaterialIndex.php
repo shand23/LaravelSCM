@@ -6,7 +6,10 @@ use Livewire\Component;
 use Livewire\WithPagination;
 use App\Models\Material;
 use App\Models\KategoriMaterial;
+use Illuminate\Support\Facades\Auth;
+use Livewire\Attributes\Layout; // <--- Penting untuk layout
 
+#[Layout('layouts.app')] // <--- Menentukan layout agar tidak error
 class MaterialIndex extends Component
 {
     use WithPagination;
@@ -35,31 +38,31 @@ class MaterialIndex extends Component
         ];
     }
 
-    public function render()
+    /**
+     * Fungsi Helper Keamanan Backend
+     */
+    private function checkPermission()
     {
-        // Ambil data material beserta relasi kategorinya
-        $materials = Material::with('kategori')
-            ->where('nama_material', 'like', '%' . $this->search . '%')
-            ->orderBy('id_material', 'desc')
-            ->paginate(10);
-
-        // Ambil data kategori yang Aktif untuk dropdown form
-        $kategoris = KategoriMaterial::where('status_kategori', 'Aktif')->get();
-
-        return view('livewire.logistik.material.material-index', compact('materials', 'kategoris'))
-            ->layout('layouts.app');
+        if (!Auth::user()->can_manage_master) {
+            session()->flash('error', 'Akses Ditolak: Anda tidak memiliki izin untuk mengelola Data Master.');
+            return false;
+        }
+        return true;
     }
 
     public function create()
     {
+        if (!$this->checkPermission()) return;
+
         $this->resetFields();
+        $this->status_material = 'Aktif';
         $this->isEditMode = false;
-        $this->status_material = 'Aktif'; // Default value
         $this->isModalOpen = true;
     }
 
     public function store()
     {
+        if (!$this->checkPermission()) return;
         $this->validate();
 
         if ($this->isEditMode) {
@@ -74,7 +77,6 @@ class MaterialIndex extends Component
             ]);
             session()->flash('message', 'Data Material berhasil diperbarui.');
         } else {
-            // Create baru (ID MAT000x otomatis dibuat oleh Model)
             Material::create([
                 'id_kategori_material' => $this->id_kategori_material,
                 'nama_material'        => $this->nama_material,
@@ -91,6 +93,8 @@ class MaterialIndex extends Component
 
     public function edit($id)
     {
+        if (!$this->checkPermission()) return;
+
         $material = Material::findOrFail($id);
         
         $this->id_material          = $material->id_material;
@@ -107,6 +111,8 @@ class MaterialIndex extends Component
 
     public function delete($id)
     {
+        if (!$this->checkPermission()) return;
+
         Material::findOrFail($id)->delete();
         session()->flash('message', 'Data Material berhasil dihapus.');
     }
@@ -127,5 +133,20 @@ class MaterialIndex extends Component
         $this->spesifikasi          = '';
         $this->standar_kualitas     = '';
         $this->status_material      = '';
+    }
+
+    public function render()
+    {
+        $materials = Material::with('kategori')
+            ->where('nama_material', 'like', '%' . $this->search . '%')
+            ->orderBy('id_material', 'desc')
+            ->paginate(10);
+
+        $kategoris = KategoriMaterial::where('status_kategori', 'Aktif')->get();
+
+        return view('livewire.logistik.material.material-index', [
+            'materials' => $materials,
+            'kategoris' => $kategoris
+        ]);
     }
 }
