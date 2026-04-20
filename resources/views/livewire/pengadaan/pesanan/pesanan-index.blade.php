@@ -106,15 +106,26 @@
                                     {{ $psn->status_pesanan }}
                                 </span>
                             </td>
-                            <td class="px-6 py-4 text-center text-sm font-medium flex justify-center gap-2">
-                                <button wire:click="cetakPDF('{{ $psn->id_pesanan }}')" class="text-blue-600 hover:text-blue-900 bg-blue-50 px-3 py-1.5 rounded-md border border-blue-100 flex items-center gap-1">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
-                                    Cetak PDF
-                                </button>
-                                @if($psn->status_pesanan !== 'Berlanjut ke Kontrak')
-                                    <button wire:click="edit('{{ $psn->id_pesanan }}')" class="text-yellow-600 hover:text-yellow-900 bg-yellow-50 px-3 py-1.5 rounded-md border border-yellow-100">Edit</button>
-                                    <button wire:click="delete('{{ $psn->id_pesanan }}')" wire:confirm="Yakin ingin menghapus pesanan ini?" class="text-red-600 hover:text-red-900 bg-red-50 px-3 py-1.5 rounded-md border border-red-100">Hapus</button>
-                                @endif
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-center">
+    {{-- Tombol PDF/Cetak (Bisa diakses siapa saja, tapi bisa mengubah status Draft) --}}
+    <button wire:click="cetakPDF('{{ $psn->id_pesanan }}')" class="text-blue-600 hover:text-blue-900 bg-blue-50 px-3 py-1.5 rounded-md border border-blue-200 transition-colors mx-1" title="Cetak RFQ">
+        <svg class="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+        Cetak RFQ
+    </button>
+                              @if($psn->status_pesanan === 'Draft')
+        {{-- Hanya muncul jika statusnya Draft DAN user yang login adalah pembuatnya --}}
+        @if($psn->id_user_pengadaan == auth()->user()->id_user)
+            <button wire:click="edit('{{ $psn->id_pesanan }}')" class="text-yellow-600 hover:text-yellow-900 bg-yellow-50 px-3 py-1.5 rounded-md border border-yellow-200 transition-colors mx-1">
+                Edit
+            </button>
+            <button wire:click="delete('{{ $psn->id_pesanan }}')" wire:confirm="Yakin menghapus RFQ ini?" class="text-red-600 hover:text-red-900 bg-red-50 px-3 py-1.5 rounded-md border border-red-200 transition-colors mx-1">
+                Hapus
+            </button>
+        @else
+            {{-- Pesan opsional jika user lain melihat RFQ Draft milik temannya --}}
+            <span class="text-gray-400 italic text-xs ml-2">Read-Only</span>
+        @endif
+    @endif
                             </td>
                         </tr>
                     @empty

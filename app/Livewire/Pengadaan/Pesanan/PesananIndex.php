@@ -42,6 +42,11 @@ class PesananIndex extends Component
     {
         $pesanan = Pesanan::with(['supplier', 'pengajuan', 'detailPesanan.material'])->findOrFail($id);
 
+        if ($pesanan->status_pesanan === 'Draft' && $pesanan->id_user_pengadaan != Auth::user()->id_user) {
+        session()->flash('error', 'Akses Ditolak: Hanya pembuat RFQ yang dapat mencetak dokumen saat masih berstatus Draft.');
+        return;
+    }
+        
         if ($pesanan->status_pesanan === 'Draft') {
             $pesanan->update(['status_pesanan' => 'Proses Negosiasi']);
         }
@@ -89,6 +94,11 @@ class PesananIndex extends Component
         $this->resetErrorBag();
         $pesanan = Pesanan::with('detailPesanan')->findOrFail($id);
 
+        if ($pesanan->id_user_pengadaan != Auth::user()->id_user) {
+            session()->flash('error', 'Akses Ditolak: Anda hanya dapat mengubah RFQ yang Anda buat sendiri.');
+            return;
+        }
+
         if ($pesanan->status_pesanan === 'Berlanjut ke Kontrak') {
             session()->flash('error', 'Pesanan yang sudah berlanjut ke kontrak tidak dapat diedit.');
             return;
@@ -125,6 +135,11 @@ class PesananIndex extends Component
     public function delete($id)
     {
         $pesanan = Pesanan::findOrFail($id);
+
+        if ($pesanan->id_user_pengadaan != Auth::user()->id_user) {
+            session()->flash('error', 'Akses Ditolak: Anda tidak memiliki izin untuk menghapus RFQ ini.');
+            return;
+        }
 
         if ($pesanan->status_pesanan === 'Berlanjut ke Kontrak') {
             session()->flash('error', 'Pesanan yang sudah berlanjut ke kontrak tidak dapat dihapus.');
@@ -207,7 +222,7 @@ class PesananIndex extends Component
                 $pesanan = Pesanan::create([
                     'id_pengajuan' => $this->id_pengajuan,
                     'id_supplier' => $this->id_supplier,
-                    'id_user_pengadaan' => Auth::id() ?? 'USR001', // Sesuaikan auth Anda
+                    'id_user_pengadaan' => Auth::user()->id_user, // Sesuaikan auth Anda
                     'nomor_pesanan' => $this->generateNomorPesanan(),
                     'tanggal_pesanan' => $this->tanggal_pesanan,
                     'status_pesanan' => 'Draft',
