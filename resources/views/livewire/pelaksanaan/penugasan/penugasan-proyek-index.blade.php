@@ -1,4 +1,4 @@
-<div class="p-6 bg-gray-50 min-h-screen">
+<div wire:poll.3s class="p-6 bg-gray-50 min-h-screen">
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
             <h1 class="text-3xl font-extrabold text-gray-800 tracking-tight">Proyek Saya</h1>

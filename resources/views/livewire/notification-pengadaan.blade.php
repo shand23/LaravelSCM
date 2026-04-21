@@ -6,8 +6,8 @@
 
     <div class="flex items-center gap-6">
         
-        {{-- CEK ROLE LOGISTIK: Ikon Lonceng Hanya Muncul Untuk Logistik --}}
-        @if(auth()->user()->ROLE == 'Logistik')
+        {{-- CEK ROLE PENGADAAN: Ikon Lonceng Hanya Muncul Untuk Tim Pengadaan --}}
+        @if(auth()->user()->ROLE == 'Tim Pengadaan')
             <div x-data="{ open: false }" 
                  @play-notif-sound.window="new Audio('{{ asset('ashiap.mp3') }}').play().catch(() => {})"
                  class="relative">
@@ -36,7 +36,7 @@
                      style="display: none;">
                     
                     <div class="bg-gray-50/80 px-4 py-3 border-b border-gray-100 flex justify-between items-center">
-                        <h3 class="text-sm font-bold text-gray-800">Notifikasi Logistik</h3>
+                        <h3 class="text-sm font-bold text-gray-800">Notifikasi Pengadaan</h3>
                         <span class="bg-indigo-100 text-indigo-700 text-xs font-semibold px-2 py-0.5 rounded-full">{{ $jmlNotifUnread }} Baru</span>
                     </div>
 
@@ -54,15 +54,15 @@
                                     </span>
                                 </div>
                                 
-                                <p class="text-sm text-gray-800 mt-1">
+                                <p class="text-sm text-gray-800 mt-1 font-semibold">
                                     {{ $notif->desc }}
                                 </p>
 
                                 <p class="text-[11px] text-gray-500 mt-0.5">
                                     @if($notif->type == 'pengiriman')
-                                        <span class="text-indigo-500">●</span> Klik untuk proses QC/Penerimaan.
+                                        <span class="text-indigo-500">●</span> Pantau status pengiriman / return dari supplier.
                                     @else
-                                        <span class="text-green-500">●</span> PM menyetujui permintaan, siapkan barang.
+                                        <span class="text-green-500">●</span> Logistik mengajukan PR, segera proses RFQ.
                                     @endif
                                 </p>
                             </a>
@@ -76,7 +76,7 @@
 
             </div>
         @endif
-        {{-- AKHIR CEK ROLE LOGISTIK --}}
+        {{-- AKHIR CEK ROLE PENGADAAN --}}
 
         {{-- Profil User (Tetap Tampil Untuk Semua Role) --}}
         <div class="flex items-center gap-3">

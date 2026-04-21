@@ -1,4 +1,4 @@
-<div class="p-6">
+<div wire:poll.5s class="p-6">
     {{-- HEADER --}}
     <div class="mb-6">
         <h1 class="text-2xl font-bold text-gray-800">Manajemen Pesanan & RFQ</h1>

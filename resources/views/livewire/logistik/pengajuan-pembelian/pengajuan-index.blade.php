@@ -1,4 +1,4 @@
-<div>
+<div wire:poll.3s>
     {{-- HEADER --}}
     <div class="flex justify-between mb-4 items-center">
         <h1 class="text-xl font-bold text-gray-800">Daftar Pengajuan Pembelian (PR)</h1>

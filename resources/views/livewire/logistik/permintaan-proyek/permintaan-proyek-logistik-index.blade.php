@@ -1,4 +1,4 @@
-<div class="p-6 bg-gray-50 min-h-screen">
+<div wire:poll.3s class="p-6 bg-gray-50 min-h-screen">
     <div class="flex justify-between items-center mb-6">
         <div>
             <h1 class="text-2xl font-extrabold text-gray-800 tracking-tight">Logistik: Permintaan Proyek</h1>

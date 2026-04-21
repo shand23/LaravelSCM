@@ -1,4 +1,4 @@
-<div>
+<div wire:poll.10s>
     <div class="flex justify-between mb-4 items-center">
         <h1 class="text-xl font-bold text-gray-800">Manajemen Penugasan Tim</h1>
         <button wire:click="create" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded shadow">

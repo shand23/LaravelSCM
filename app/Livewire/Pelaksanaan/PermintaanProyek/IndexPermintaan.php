@@ -33,6 +33,7 @@ class IndexPermintaan extends Component
     public $batas_tanggal = null;
     public $isEditMode = false;
     public $edit_id = null;
+    public $filterOwner = '';
 
     protected $updatesQueryString = ['search'];
 
@@ -63,6 +64,11 @@ class IndexPermintaan extends Component
         $this->resetErrorBag();
         $permintaan = PermintaanProyek::with('detailPermintaan')->findOrFail($id);
         
+        if ($permintaan->id_user != Auth::id()) {
+            session()->flash('error', 'Akses Ditolak! Anda tidak dapat mengedit permintaan milik rekan tim.');
+            return;
+        }
+
         // Keamanan ekstra: cegah edit jika status sudah berubah
        if (!in_array($permintaan->status_permintaan, ['Menunggu Persetujuan', 'Ditolak'])) {
             session()->flash('error', 'Data tidak bisa diedit karena status sudah diproses.');
@@ -91,6 +97,11 @@ class IndexPermintaan extends Component
     {
         $permintaan = PermintaanProyek::findOrFail($id);
         
+if ($permintaan->id_user != Auth::id()) {
+            session()->flash('error', 'Akses Ditolak! Anda tidak dapat menghapus permintaan milik rekan tim.');
+            return;
+        }
+
         // PERBAIKAN: Izinkan penghapusan jika status Menunggu Persetujuan ATAU Ditolak
         if (in_array($permintaan->status_permintaan, ['Menunggu Persetujuan', 'Ditolak'])) {
             $permintaan->delete(); // Pastikan relasi di DB menggunakan ON DELETE CASCADE
@@ -213,7 +224,8 @@ class IndexPermintaan extends Component
                     
                     // KEMBALIKAN STATUS & HAPUS CATATAN (Logika Skema 2)
                     'status_permintaan' => 'Menunggu Persetujuan',
-                    'catatan_penolakan' => null 
+                    'catatan_penolakan' => null, 
+                    'is_read_manajer'   => false
                 ]);
 
                 // Hapus detail lama, insert detail baru
@@ -258,8 +270,15 @@ class IndexPermintaan extends Component
     {
         $usedPermintaanIds = PenggunaanMaterial::pluck('id_permintaan')->toArray();    
 
-        $permintaans = PermintaanProyek::with(['proyek'])
+        // 1. Ambil ID Proyek yang ditugaskan ke User yang sedang login
+        $assignedProyekIds = DB::table('penugasan_proyek')
             ->where('id_user', Auth::id())
+            ->where('status_penugasan', 'Aktif')
+            ->pluck('id_proyek');
+
+        // 2. Tampilkan SEMUA permintaan yang ada di proyek-proyek tersebut (bukan cuma milik Auth::id())
+        $permintaans = PermintaanProyek::with(['proyek', 'user'])
+            ->whereIn('id_proyek', $assignedProyekIds) // <--- PERUBAHAN DI SINI
             ->where(function($q) {
                 $q->where('id_permintaan', 'like', "%{$this->search}%")
                   ->orWhereHas('proyek', function($sq) { 
@@ -269,19 +288,16 @@ class IndexPermintaan extends Component
             ->when($this->filterStatus, function($q) {
                 $q->where('status_permintaan', $this->filterStatus);
             })
-            // ---> TAMBAHKAN FILTER PROYEK DI SINI <---
             ->when($this->filterProyek, function($q) {
                 $q->where('id_proyek', $this->filterProyek);
             })
+            ->when($this->filterOwner === 'self', function($q) {
+            $q->where('id_user', Auth::id());
+        })
             ->orderBy($this->sortColumn, $this->sortDirection)
             ->paginate(10);
 
-        // Data listProyek sudah ada di kode Anda sebelumnya, kita akan gunakan ini untuk dropdown
-        $assignedProyekIds = DB::table('penugasan_proyek')
-            ->where('id_user', Auth::id())
-            ->where('status_penugasan', 'Aktif')
-            ->pluck('id_proyek');
-
+        // 3. Dropdown untuk Modal Create
         $listProyek = Proyek::where('status_proyek', 'Aktif')
             ->whereIn('id_proyek', $assignedProyekIds)
             ->get();

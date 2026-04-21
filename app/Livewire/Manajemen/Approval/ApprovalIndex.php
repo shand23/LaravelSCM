@@ -7,6 +7,7 @@ use Livewire\WithPagination;
 use Livewire\Attributes\Layout;
 use App\Models\PermintaanProyek;
 use App\Models\Proyek;
+use App\Models\user;
 
 #[Layout('layouts.app')] 
 class ApprovalIndex extends Component
@@ -48,7 +49,7 @@ class ApprovalIndex extends Component
 
     public function render()
     {
-        $query = PermintaanProyek::with('proyek');
+        $query = PermintaanProyek::with('proyek','user');
 
         // 1. Terapkan Filter Status
         if ($this->filterStatus !== '') {

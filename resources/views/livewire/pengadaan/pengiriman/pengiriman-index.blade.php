@@ -1,4 +1,4 @@
-<div class="p-6">
+<div wire:poll.3s class="p-6">
     {{-- HEADER --}}
     <div class="flex justify-between items-center mb-6">
         <div>

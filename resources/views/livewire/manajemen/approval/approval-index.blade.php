@@ -1,4 +1,4 @@
-<div>
+<div wire:poll.3s>
     {{-- HEADER --}}
     <div class="flex justify-between mb-4 items-center">
         <h1 class="text-xl font-bold text-gray-800">Approval Permintaan Material</h1>
@@ -50,6 +50,7 @@
                     <th wire:click="sortBy('id_permintaan')" class="cursor-pointer hover:bg-gray-100 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                         ID Permintaan @if($sortColumn === 'id_permintaan') {!! $sortDirection === 'asc' ? '&#8593;' : '&#8595;' !!} @endif
                     </th>
+                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Pengaju</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Proyek</th>
                     <th wire:click="sortBy('tanggal_permintaan')" class="cursor-pointer hover:bg-gray-100 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                         Tanggal @if($sortColumn === 'tanggal_permintaan') {!! $sortDirection === 'asc' ? '&#8593;' : '&#8595;' !!} @endif
@@ -62,7 +63,16 @@
                 @forelse ($dataPermintaan as $item)
                     <tr class="hover:bg-gray-50">
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ $item->id_permintaan }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+    <div class="text-sm font-semibold text-gray-900">
+        {{ $item->user->nama_lengkap ?? 'User Tidak Ditemukan' }}
+    </div>
+    <div class="text-[11px] text-gray-500 font-medium tracking-wider">
+        ID: {{ $item->id_user }}
+    </div>
+</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">{{ $item->proyek->nama_proyek ?? 'Tanpa Proyek' }}</td>
+                        
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ \Carbon\Carbon::parse($item->tanggal_permintaan)->format('d M Y') }}</td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 

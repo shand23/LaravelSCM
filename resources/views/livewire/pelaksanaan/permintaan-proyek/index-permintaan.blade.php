@@ -1,4 +1,4 @@
-<div>
+<div wire:poll.3s>
     {{-- HEADER --}}
     <div class="flex justify-between mb-4 items-center">
         <h1 class="text-xl font-bold text-gray-800">Permintaan Material Proyek</h1>
@@ -22,21 +22,26 @@
     @endif
 
     {{-- FILTER & SEARCH --}}
-    <div class="bg-white p-4 mb-4 rounded-xl shadow-sm border border-gray-100">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+{{-- FILTER & SEARCH --}}
+    <div class="bg-white p-5 mb-5 rounded-xl shadow-sm border border-gray-100">
+        {{-- Ubah ke 4 kolom untuk menampung semua filter --}}
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-center">
+            
             {{-- 1. Search Box --}}
             <div class="relative">
                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
                 </div>
                 <input type="text" wire:model.live.debounce.300ms="search" 
-                       placeholder="Cari ID Permintaan..." 
-                       class="w-full pl-10 border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm border px-3 py-2 bg-gray-50">
+                       placeholder="Cari ID / Nama Proyek..." 
+                       class="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-gray-50 transition-colors">
             </div>
             
             {{-- 2. Dropdown Filter Proyek --}}
             <div>
-                <select wire:model.live="filterProyek" class="w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm border px-3 py-2 bg-gray-50 text-gray-700 font-medium">
+                <select wire:model.live="filterProyek" class="w-full border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm px-3 py-2 bg-gray-50 text-gray-700 font-medium transition-colors">
                     <option value="">-- Semua Proyek --</option>
                     @foreach($listProyek as $proyek)
                         <option value="{{ $proyek->id_proyek }}">{{ $proyek->nama_proyek }}</option>
@@ -46,15 +51,24 @@
 
             {{-- 3. Dropdown Filter Status --}}
             <div>
-                <select wire:model.live="filterStatus" class="w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm border px-3 py-2 bg-gray-50 text-gray-700 font-medium">
+                <select wire:model.live="filterStatus" class="w-full border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm px-3 py-2 bg-gray-50 text-gray-700 font-medium transition-colors">
                     <option value="">-- Semua Status --</option>
                     <option value="Menunggu Persetujuan">Menunggu Persetujuan</option>
-                    <option value="Diproses Sebagian">Diproses Sebagian</option>
                     <option value="Disetujui PM">Disetujui PM</option>
+                    <option value="Diproses Sebagian">Diproses Sebagian</option>
                     <option value="Selesai">Selesai</option>
                     <option value="Ditolak">Ditolak</option>
                 </select>
             </div>
+
+            {{-- 4. Dropdown Filter Pembuat (Owner) --}}
+            <div>
+                <select wire:model.live="filterOwner" class="w-full border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm px-3 py-2 bg-gray-50 text-gray-700 font-medium transition-colors">
+                    <option value="">-- Semua Data Tim --</option>
+                    <option value="self">Hanya Data Buatan Saya</option>
+                </select>
+            </div>
+
         </div>
     </div>
 
@@ -72,6 +86,7 @@
                                 @endif
                             </div>
                         </th>
+                        <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Pengaju</th>
                         <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Nama Proyek</th>
                         <th wire:click="sortBy('tanggal_permintaan')" class="cursor-pointer hover:bg-gray-100 px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider select-none">
                             <div class="flex items-center space-x-1">
@@ -91,6 +106,19 @@
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-blue-600">
                                 {{ $p->id_permintaan }}
                             </td>
+
+                            <td class="px-6 py-4 whitespace-nowrap">
+    <div class="flex items-center">
+        
+        
+        <div class="ml-3">
+            <div class="text-sm font-medium text-gray-900">{{ $p->user->nama_lengkap?? 'Tidak Diketahui' }}</div>
+            <div class="text-[10px] text-gray-500 uppercase">{{ $p->id_user }}</div>
+        </div>
+    </div>
+    </div>
+</td>
+
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
                                 {{ $p->proyek->nama_proyek ?? '-' }}
                             </td>
@@ -120,20 +148,33 @@
                                     </button>
 
                                     {{-- 2. TOMBOL EDIT (Hanya jika Menunggu Persetujuan) --}}
-                                    @if($p->status_permintaan === 'Menunggu Persetujuan')
-                                        <button wire:click="edit('{{ $p->id_permintaan }}')" class="text-amber-600 hover:text-white hover:bg-amber-500 bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-200 transition-colors font-semibold">
-                                            Edit
-                                        </button>
-                                    @endif
+                                   {{-- 2 & 3. TOMBOL EDIT DAN HAPUS --}}
+{{-- Bandingkan langsung sebagai String --}}
+@if($p->id_user === auth()->id() || $p->id_user === auth()->user()->id_user)
+    
+    @php
+        // Membersihkan spasi jika ada agar pengecekan status akurat
+        $status = trim($p->status_permintaan);
+    @endphp
 
-                                    {{-- 3. TOMBOL HAPUS (Hanya jika Menunggu Persetujuan atau Ditolak) --}}
-                                    @if(in_array($p->status_permintaan, ['Menunggu Persetujuan', 'Ditolak']))
-                                        <button wire:click="delete('{{ $p->id_permintaan }}')" 
-                                                wire:confirm="Yakin ingin menghapus permintaan material ini?" 
-                                                class="text-red-600 hover:text-white hover:bg-red-600 bg-red-50 px-3 py-1.5 rounded-lg border border-red-200 transition-colors font-semibold">
-                                            Hapus
-                                        </button>
-                                    @endif
+    @if(in_array($status, ['Menunggu Persetujuan', 'Ditolak']))
+        <div class="flex gap-2 mt-2">
+            {{-- Tombol Edit --}}
+            <button wire:click="edit('{{ $p->id_permintaan }}')" 
+                    class="text-amber-600 hover:text-white hover:bg-amber-500 bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-200 transition-colors font-semibold">
+                Edit
+            </button>
+
+            {{-- Tombol Hapus --}}
+            <button wire:click="delete('{{ $p->id_permintaan }}')" 
+                    wire:confirm="Yakin ingin menghapus permintaan material ini?" 
+                    class="text-red-600 hover:text-white hover:bg-red-600 bg-red-50 px-3 py-1.5 rounded-lg border border-red-200 transition-colors font-semibold">
+                Hapus
+            </button>
+        </div>
+    @endif
+
+@endif
 
                                     {{-- 4. TOMBOL BUAT LAPORAN (Hanya jika Diproses Sebagian atau Selesai) --}}
                                     @if(in_array($p->status_permintaan, ['Diproses Sebagian', 'Selesai']))
