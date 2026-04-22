@@ -9,7 +9,7 @@
         {{-- CEK ROLE LOGISTIK: Ikon Lonceng Hanya Muncul Untuk Logistik --}}
         @if(auth()->user()->ROLE == 'Logistik')
             <div x-data="{ open: false }" 
-                 @play-notif-sound.window="new Audio('{{ asset('ashiap.mp3') }}').play().catch(() => {})"
+                 @play-notif-sound.window="new Audio('{{ asset('notifikasi.mp3') }}').play().catch(() => {})"
                  class="relative">
                 
                 <button @click="open = !open" @click.outside="open = false" class="relative p-1 rounded-full hover:bg-gray-100 transition group focus:outline-none">

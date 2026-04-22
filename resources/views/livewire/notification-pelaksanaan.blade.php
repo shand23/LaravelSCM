@@ -8,7 +8,7 @@
         
         @if(auth()->user()->ROLE == 'Tim Pelaksanaan')
             <div x-data="{ open: false }" 
-                 @play-notif-sound.window="new Audio('{{ asset('ashiap.mp3') }}').play().catch(() => {})"
+                 @play-notif-sound.window="new Audio('{{ asset('notifikasi.mp3') }}').play().catch(() => {})"
                  class="relative">
                 
                 <button @click="open = !open" @click.outside="open = false" class="relative p-1 rounded-full hover:bg-gray-100 transition focus:outline-none">
