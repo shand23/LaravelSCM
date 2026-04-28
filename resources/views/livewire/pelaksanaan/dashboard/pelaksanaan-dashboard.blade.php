@@ -1,4 +1,4 @@
-<div>
+<div wire:poll.3s>
     {{-- HEADER & DROPDOWN FILTER --}}
     <div class="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
@@ -115,56 +115,65 @@
         </div>
     </div>
     
-    {{-- SCRIPT CHART.JS --}}
+   {{-- SCRIPT CHART.JS --}}
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        document.addEventListener('livewire:initialized', () => {
+        // 1. Buat Fungsi Global untuk merender Chart
+        // (Bisa diakses kapan saja dan mencegah duplikasi kode)
+        window.renderTrenMaterialChart = function(labels, data) {
             const ctx = document.getElementById('trenMaterialChart');
-            let chartInstance = null;
+            if (!ctx) return; // Jika canvas tidak ditemukan, hentikan
 
-            // Fungsi untuk menggambar atau memperbarui chart
-            const renderChart = (labels, data) => {
-                if (chartInstance) {
-                    chartInstance.destroy(); // Hancurkan chart lama sebelum membuat yang baru
-                }
+            // HANCURKAN instance chart lama jika sudah ada agar tidak bentrok
+            if (Chart.getChart('trenMaterialChart')) {
+                Chart.getChart('trenMaterialChart').destroy();
+            }
 
-                if (ctx && data.length > 0) {
-                    chartInstance = new Chart(ctx, {
-                        type: 'doughnut', 
-                        data: {
-                            labels: labels,
-                            datasets: [{
-                                data: data,
-                                backgroundColor: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'],
-                                borderWidth: 0,
-                                hoverOffset: 4
-                            }]
-                        },
-                        options: { 
-                            responsive: true, 
-                            maintainAspectRatio: false,
-                            cutout: '70%',
-                            plugins: {
-                                legend: { 
-                                    position: 'bottom', 
-                                    labels: { boxWidth: 10, padding: 15, font: {size: 11} } 
-                                }
+            // RENDER chart baru
+            if (data && data.length > 0) {
+                new Chart(ctx, {
+                    type: 'doughnut', 
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            data: data,
+                            backgroundColor: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'],
+                            borderWidth: 0,
+                            hoverOffset: 4
+                        }]
+                    },
+                    options: { 
+                        responsive: true, 
+                        maintainAspectRatio: false,
+                        cutout: '70%',
+                        plugins: {
+                            legend: { 
+                                position: 'bottom', 
+                                labels: { boxWidth: 10, padding: 15, font: {size: 11} } 
                             }
                         }
-                    });
-                }
-            };
+                    }
+                });
+            }
+        };
 
-            // Render pertama kali saat halaman dimuat
-            renderChart(@json($chartLabels), @json($chartData));
+        // 2. JALANKAN SAAT HALAMAN DIBUKA ATAU BERPINDAH SPA
+        document.addEventListener('livewire:navigated', () => {
+            // Cek apakah elemen ada di halaman ini
+            if (document.getElementById('trenMaterialChart')) {
+                window.renderTrenMaterialChart(@json($chartLabels), @json($chartData));
+            }
+        });
 
-            // Dengarkan event dari Livewire saat Dropdown diubah
+        // 3. JALANKAN SAAT DROPDOWN DIUBAH (Hanya didaftarkan 1 kali agar tidak bocor memory)
+        document.addEventListener('livewire:initialized', () => {
             Livewire.on('chart-updated', (event) => {
-                // Livewire 3 mengirim data event dalam array index 0
+                // Livewire 3 menyimpan data payload di index 0
                 const labels = event[0].labels;
                 const data = event[0].data;
-                renderChart(labels, data);
+                
+                // Panggil fungsi render ulang
+                window.renderTrenMaterialChart(labels, data);
             });
         });
     </script>
-</div>

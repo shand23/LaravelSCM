@@ -45,7 +45,7 @@
                     </td>
                     <td class="px-6 py-4">
                         <div class="text-sm font-bold text-gray-900">{{ $laporan->proyek->nama_proyek ?? '-' }}</div>
-                        <div class="text-xs text-gray-500 font-medium">Oleh: {{ $laporan->pelaksana->name ?? '-' }}</div>
+                        <div class="text-xs text-gray-500 font-medium">Oleh: {{ $laporan->pelaksana->nama_lengkap ?? '-' }}</div>
                     </td>
                     <td class="px-6 py-4 text-sm text-gray-700">
                         {{ $laporan->area_pekerjaan }}

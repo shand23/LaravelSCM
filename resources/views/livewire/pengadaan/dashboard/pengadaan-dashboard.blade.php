@@ -1,4 +1,4 @@
-<div>
+<div >
     {{-- Header Sambutan --}}
     <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6 border border-gray-100">
         <div class="p-6 flex items-center justify-between">
@@ -90,7 +90,7 @@
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
         {{-- Chart 1: Tren Harga Pembelian --}}
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100" wire:ignore>
             <h4 class="text-sm font-bold text-gray-800 mb-4">Tren Harga Pembelian Material (Rp)</h4>
             <div class="relative h-64 w-full">
                 <canvas id="hargaChart"></canvas>
@@ -98,8 +98,8 @@
         </div>
 
         {{-- Chart 2: Point Utama SCM Health --}}
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col justify-between relative overflow-hidden">
-            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-500 via-amber-400 to-emerald-500"></div>
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col justify-between relative overflow-hidden" wire:ignore>
+            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-500 via-amber-400 to-emerald-500" wire:ignore></div>
             <h4 class="text-sm font-bold text-gray-800 mb-2 flex items-center gap-2">
                 <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
                 Titik Utama: Kesehatan SCM
@@ -111,7 +111,7 @@
         </div>
 
         {{-- Chart 3: Kinerja Waktu Pengiriman --}}
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100" wire:ignore>
             <h4 class="text-sm font-bold text-gray-800 mb-4">Kinerja Waktu Pengiriman Supplier</h4>
             <div class="relative h-64 w-full">
                 <canvas id="kinerjaChart"></canvas>
@@ -119,7 +119,7 @@
         </div>
 
         {{-- Chart 4: RINGKASAN KEUANGAN PENGADAAN --}}
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100" wire:ignore>
             <div class="flex justify-between items-center mb-4">
                 <h4 class="text-sm font-bold text-gray-800 flex items-center gap-2">
                     <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 1.343-3 3s1.343 3 3 3 3-1.343 3-3-1.343-3-3-3zM12 4v16m8-8H4"></path></svg>
@@ -134,13 +134,22 @@
     </div>
 
     {{-- Script untuk Chart.js --}}
+{{-- Script untuk Chart.js --}}
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
+        // UBAH BARIS INI: Gunakan 'livewire:navigated' bukan 'DOMContentLoaded'
+        document.addEventListener('livewire:navigated', function () {
             
+            // PENTING: Hancurkan chart lama jika ada, agar tidak error "Canvas is already in use" saat pindah-pindah halaman
+            if(Chart.getChart('hargaChart')) Chart.getChart('hargaChart').destroy();
+            if(Chart.getChart('scmHealthChart')) Chart.getChart('scmHealthChart').destroy();
+            if(Chart.getChart('kinerjaChart')) Chart.getChart('kinerjaChart').destroy();
+            if(Chart.getChart('keuanganChart')) Chart.getChart('keuanganChart').destroy();
+
             // 1. INIT CHART TREN HARGA (LINE CHART)
             const dataHarga = @json($trenHargaMaterial);
             new Chart(document.getElementById('hargaChart').getContext('2d'), {
+                // ... (Biarkan kode konfigurasi chart Anda tetap sama seperti sebelumnya) ...
                 type: 'line',
                 data: {
                     labels: dataHarga.labels,
@@ -177,14 +186,15 @@
             const kesehatanData = @json($kesehatanSCM);
             const backgroundColors = kesehatanData.labels.map(label => {
                 const text = label.toLowerCase();
-                if (text.includes('selesai') || text.includes('penuh')) return '#10b981'; // Emerald
-                if (text.includes('perjalanan')) return '#3b82f6'; // Blue
-                if (text.includes('pending')) return '#f59e0b'; // Amber
-                if (text.includes('return') || text.includes('masalah')) return '#ef4444'; // Red
-                return '#8b5cf6'; // Purple
+                if (text.includes('selesai') || text.includes('penuh')) return '#10b981'; 
+                if (text.includes('perjalanan')) return '#3b82f6'; 
+                if (text.includes('pending')) return '#f59e0b'; 
+                if (text.includes('return') || text.includes('masalah')) return '#ef4444'; 
+                return '#8b5cf6'; 
             });
 
             new Chart(document.getElementById('scmHealthChart').getContext('2d'), {
+                // ... (Biarkan kode konfigurasi chart Anda tetap sama seperti sebelumnya) ...
                 type: 'doughnut',
                 data: {
                     labels: kesehatanData.labels,
@@ -222,6 +232,7 @@
             // 3. INIT CHART KINERJA SUPPLIER (BAR CHART)
             const dataKinerja = @json($kinerjaSupplier);
             new Chart(document.getElementById('kinerjaChart').getContext('2d'), {
+                // ... (Biarkan kode konfigurasi chart Anda tetap sama seperti sebelumnya) ...
                 type: 'bar',
                 data: {
                     labels: dataKinerja.labels,
@@ -255,6 +266,7 @@
             // 4. INIT CHART KEUANGAN (BAR CHART RUPIAH)
             const keuanganData = @json($grafikKeuangan);
             new Chart(document.getElementById('keuanganChart').getContext('2d'), {
+                // ... (Biarkan kode konfigurasi chart Anda tetap sama seperti sebelumnya) ...
                 type: 'bar',
                 data: {
                     labels: keuanganData.labels,
@@ -262,9 +274,9 @@
                         label: 'Total Nilai (Rp)',
                         data: keuanganData.data,
                         backgroundColor: [
-                            'rgba(99, 102, 241, 0.8)', // Indigo (PO Aktif)
-                            'rgba(239, 68, 68, 0.8)',  // Merah (Invoice Pending)
-                            'rgba(16, 185, 129, 0.8)'  // Hijau (Invoice Lunas)
+                            'rgba(99, 102, 241, 0.8)', 
+                            'rgba(239, 68, 68, 0.8)',  
+                            'rgba(16, 185, 129, 0.8)'  
                         ],
                         borderRadius: 6,
                         barThickness: 40
@@ -307,4 +319,4 @@
 
         });
     </script>
-</div>
+    </div>

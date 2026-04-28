@@ -1,4 +1,4 @@
-<div>
+<div wire:poll.3s>
     <div class="mb-6">
         <h1 class="text-2xl font-bold text-gray-800">Ringkasan Manajemen Proyek</h1>
         <p class="text-gray-500 text-sm">Pantau status proyek, penugasan tim, dan permintaan material yang membutuhkan persetujuan.</p>

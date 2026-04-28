@@ -31,23 +31,37 @@ class User extends Authenticatable
         'password',
     ];
 
-    protected static function boot()
-    {
-        parent::boot();
+   protected static function boot()
+{
+    parent::boot();
 
-        static::creating(function ($user) {
-            if (!$user->id_user) {
-                $last = DB::table('users')
-                    ->orderBy('id_user', 'desc')
-                    ->first();
+    static::creating(function ($user) {
+        if (!$user->id_user) {
+            // 1. Tentukan Prefix berdasarkan ROLE
+            $prefix = match ($user->ROLE) {
+                'Admin'           => 'ADM',
+                'Tim Pengadaan'   => 'PGD',
+                'Tim Pelaksanaan' => 'PLK',
+                'Logistik'        => 'LOG',
+                'Top Manajemen'   => 'TOP',
+                default           => 'USR',
+            };
 
-                if ($last) {
-                    $number = intval(substr($last->id_user, 3)) + 1;
-                    $user->id_user = 'USR' . str_pad($number, 4, '0', STR_PAD_LEFT);
-                } else {
-                    $user->id_user = 'USR0001';
-                }
+            // 2. Cari nomor terakhir yang memiliki prefix tersebut
+            $last = DB::table('users')
+                ->where('id_user', 'LIKE', $prefix . '%')
+                ->orderBy('id_user', 'desc')
+                ->first();
+
+            if ($last) {
+                // Ambil 3 angka terakhir dan tambah 1
+                $number = intval(substr($last->id_user, -3)) + 1;
+                $user->id_user = $prefix . str_pad($number, 3, '0', STR_PAD_LEFT);
+            } else {
+                // Jika belum ada user dengan role tersebut
+                $user->id_user = $prefix . '001';
             }
-        });
-    }
+        }
+    });
+}
 }

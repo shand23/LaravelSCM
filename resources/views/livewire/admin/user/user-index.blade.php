@@ -17,6 +17,7 @@
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID User</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
@@ -28,6 +29,10 @@
                 <tbody class="bg-white divide-y divide-gray-200">
                     @foreach ($users as $user)
                         <tr class="hover:bg-gray-50 transition-colors">
+<td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-blue-600">
+                {{ $user->id_user }}
+            </td>
+
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                 {{ $user->nama_lengkap }}
                                 {{-- Badge penanda jika dia Admin Logistik --}}

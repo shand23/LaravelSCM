@@ -2,160 +2,169 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Surat Jalan - {{ $pengiriman->id_pengiriman }}</title>
+    <title>Surat Jalan - DO-{{ $pengiriman->id_pengiriman }}</title>
     <style>
-        body {
-            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-            font-size: 12px;
-            color: #333;
-            margin: 0;
-            padding: 20px;
+        body { 
+            font-family: Arial, sans-serif; 
+            font-size: 12px; 
+            color: #333; 
+            line-height: 1.5;
         }
-        .header-table {
-            width: 100%;
-            border-bottom: 2px solid #2c3e50;
-            padding-bottom: 15px;
-            margin-bottom: 20px;
+
+        /* --- STYLING KOP SURAT --- */
+        .kop-surat { 
+            width: 100%; 
+            margin-bottom: 20px; 
+            border-bottom: 3px double #000; 
+            padding-bottom: 10px; 
         }
-        .header-title {
-            font-size: 22px;
-            font-weight: bold;
-            color: #2c3e50;
-            text-transform: uppercase;
-        }
-        .info-table {
-            width: 100%;
-            margin-bottom: 25px;
-        }
-        .info-table td {
-            vertical-align: top;
-            padding: 4px 0;
-        }
-        .label {
-            font-weight: bold;
-            width: 120px;
-        }
-        .content-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 30px;
-        }
-        .content-table th, .content-table td {
-            border: 1px solid #bdc3c7;
-            padding: 8px 10px;
-        }
-        .content-table th {
-            background-color: #ecf0f1;
-            font-weight: bold;
-            text-align: left;
-            color: #2c3e50;
-        }
-        .text-center { text-align: center !important; }
-        .text-right { text-align: right !important; }
-        .signature-table {
-            width: 100%;
-            margin-top: 50px;
-            text-align: center;
-        }
-        .signature-box {
-            width: 30%;
-            display: inline-block;
-        }
-        .signature-space {
-            height: 80px;
-        }
+        .kop-surat table { width: 100%; border-collapse: collapse; }
+        .kop-surat td.logo { width: 15%; text-align: center; vertical-align: middle; }
+        .kop-surat td.info { width: 70%; text-align: center; vertical-align: middle; }
+        .kop-surat h1 { margin: 0; font-size: 20px; font-weight: bold; text-transform: uppercase; color: #1e3a8a; }
+        .kop-surat p { margin: 2px 0; font-size: 11px; color: #444; }
+
+        /* --- JUDUL DOKUMEN --- */
+        .title-plain { text-align: center; margin: 20px 0; }
+        .title-plain h2 { margin: 0; font-size: 18px; text-decoration: underline; text-transform: uppercase; }
+
+        /* --- INFO TRANSAKSI --- */
+        .section-title { font-weight: bold; text-decoration: underline; margin-bottom: 8px; display: block; text-transform: uppercase; }
+        .info-table { width: 100%; margin-bottom: 20px; border-collapse: collapse; }
+        .info-table td { vertical-align: top; padding: 4px; }
+
+        /* --- STYLING TABEL BARANG --- */
+        .item-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+        .item-table th, .item-table td { border: 1px solid #000; padding: 8px; }
+        .item-table th { background-color: #f4f4f4; text-align: center; text-transform: uppercase; font-size: 11px; }
+
+        /* --- FOOTER TTD --- */
+        .footer-container { margin-top: 40px; width: 100%; }
+        .signature-box { text-align: center; }
+        .signature-space { height: 65px; }
+        .signature-name { font-weight: bold; text-decoration: underline; text-transform: uppercase; }
     </style>
 </head>
 <body>
 
-    <table class="header-table">
+    {{-- KOP SURAT --}}
+    <div class="kop-surat">
+        <table>
+            <tr>
+                <td class="logo">
+                    @php
+                        $path = public_path('logo.png');
+                        $type = pathinfo($path, PATHINFO_EXTENSION);
+                        $data = @file_get_contents($path);
+                        $base64Logo = $data ? 'data:image/' . $type . ';base64,' . base64_encode($data) : '';
+                    @endphp
+                    @if($base64Logo)
+                        <img src="{{ $base64Logo }}" alt="Logo" style="max-width: 80px;">
+                    @else
+                        <div style="font-weight: bold; color: red;">LOGO</div>
+                    @endif
+                </td>
+                <td class="info">
+                    <h1>PT. SWEVEL UNIVERSAL MEDIA</h1>
+                    <p>Jl. Mijil No.98, Karangjati, Sinduadi, Kec. Mlati,</p>
+                    <p>Kabupaten Sleman, Daerah Istimewa Yogyakarta 55284</p>
+                    <p>Telp: (0274) 511067</p>
+                </td>
+                <td style="width: 15%;"></td>
+            </tr>
+        </table>
+    </div>
+
+    {{-- JUDUL DOKUMEN --}}
+    <div class="title-plain">
+        <h2>SURAT JALAN (DELIVERY ORDER)</h2>
+        <p style="margin-top: 5px; font-weight: bold;">ID: {{ $pengiriman->id_pengiriman }}</p>
+    </div>
+
+    {{-- I. INFORMASI PENGIRIMAN --}}
+    <span class="section-title">I. INFORMASI PENGIRIMAN</span>
+    <table class="info-table">
         <tr>
-            <td width="60%">
-                <h1 class="header-title">SURAT JALAN (DELIVERY ORDER)</h1>
-                <p style="margin: 5px 0 0 0; color: #7f8c8d;">Dokumen Resmi Pengiriman Material Proyek</p>
+            <td width="55%">
+                <strong>DARI SUPPLIER / VENDOR:</strong><br>
+                {{ $pengiriman->kontrak->supplier->nama_supplier ?? 'N/A' }}<br>
+                {{ $pengiriman->kontrak->supplier->alamat_supplier ?? '-' }}<br>
+                Telp: {{ $pengiriman->kontrak->supplier->no_telepon ?? '-' }}
             </td>
-            <td width="40%" class="text-right">
-                <h2 style="margin: 0; font-size: 18px;">ID: {{ $pengiriman->id_pengiriman }}</h2>
-            </td>
-        </tr>
-    </table>
-<table class="info-table">
-        <tr>
-            <td width="50%">
+            <td width="45%">
                 <table width="100%">
                     <tr>
-                        <td class="label">Nama Supplier</td>
-                        <td>: <strong>{{ $pengiriman->kontrak->supplier->nama_supplier ?? 'Supplier Tidak Terdaftar' }}</strong></td>
-                    </tr>
-                    <tr>
-                        <td class="label">Nomor PO/Kontrak</td>
+                        <td width="45%"><strong>No. PO/Kontrak</strong></td>
                         <td>: {{ $pengiriman->id_kontrak ?? '-' }}</td>
                     </tr>
-                </table>
-            </td>
-            
-            <td width="50%">
-                <table width="100%">
                     <tr>
-                        <td class="label">Tanggal Kirim</td>
-                        <td>: {{ \Carbon\Carbon::parse($pengiriman->tanggal_berangkat)->format('d F Y') }}</td>
+                        <td><strong>Tgl. Kirim</strong></td>
+                        <td>: {{ \Carbon\Carbon::parse($pengiriman->tanggal_berangkat)->translatedFormat('d F Y') }}</td>
                     </tr>
                     <tr>
-                        <td class="label">Tanggal Estimasi</td>
-                        <td>: {{ $pengiriman->estimasi_tanggal_tiba ? \Carbon\Carbon::parse($pengiriman->estimasi_tanggal_tiba)->format('d F Y') : '-' }}</td>
+                        <td><strong>Estimasi Tiba</strong></td>
+                        <td>: {{ $pengiriman->estimasi_tanggal_tiba ? \Carbon\Carbon::parse($pengiriman->estimasi_tanggal_tiba)->translatedFormat('d F Y') : '-' }}</td>
                     </tr>
                 </table>
             </td>
         </tr>
     </table>
 
-    <table class="content-table">
+    {{-- II. RINCIAN MATERIAL --}}
+    <span class="section-title">II. RINCIAN MATERIAL</span>
+    <table class="item-table">
         <thead>
             <tr>
-                <th class="text-center" width="5%">No</th>
-                <th width="50%">Nama Material</th>
-                <th class="text-center" width="15%">Satuan</th>
-                <th class="text-right" width="30%">Jumlah Dikirim</th>
+                <th width="5%">No</th>
+                <th width="45%">Nama Material</th>
+                <th width="20%">Satuan</th>
+                <th width="30%">Jumlah Dikirim</th>
             </tr>
         </thead>
         <tbody>
-            @forelse($pengiriman->detailPengiriman as $index => $detail)
+            {{-- Menggunakan safety guard ?? [] agar tidak error jika data kosong --}}
+            @forelse($pengiriman->detailPengiriman ?? [] as $index => $detail)
             <tr>
-                <td class="text-center">{{ $index + 1 }}</td>
+                <td style="text-align: center;">{{ $index + 1 }}</td>
                 <td>{{ $detail->detailKontrak->material->nama_material ?? 'Material Tidak Ditemukan' }}</td>
-                <td class="text-center">{{ $detail->detailKontrak->material->satuan ?? '-' }}</td>
-                <td class="text-right"><strong>{{ number_format($detail->jumlah_dikirim, 0, ',', '.') }}</strong></td>
+                <td style="text-align: center;">{{ $detail->detailKontrak->material->satuan ?? '-' }}</td>
+                <td style="text-align: right;"><strong>{{ number_format($detail->jumlah_dikirim, 0, ',', '.') }}</strong></td>
             </tr>
             @empty
             <tr>
-                <td colspan="4" class="text-center" style="padding: 20px;">Tidak ada detail barang untuk pengiriman ini.</td>
+                <td colspan="4" style="text-align: center; padding: 20px; color: #777; font-style: italic;">
+                    Tidak ada detail barang untuk pengiriman ini.
+                </td>
             </tr>
             @endforelse
         </tbody>
     </table>
 
-    <table class="signature-table">
-        <tr>
-            <td class="signature-box">
-                <p><strong>Dibuat Oleh,</strong></p>
-                <div class="signature-space"></div>
-                <p>( {{ Auth::user()->nama_lengkap }} ) </p>
-            </td>
-
-            <td class="signature-box">
-                <p><strong>Pihak Pengirim (Vendor/Ekspedisi)</strong></p>
-                <div class="signature-space"></div>
-                <p>___________________________</p>
-            </td>
-           
-            <td class="signature-box">
-                <p><strong>Pihak Penerima (Logistik)</strong></p>
-                <div class="signature-space"></div>
-                <p>___________________________</p>
-            </td>
-        </tr>
-    </table>
+    {{-- FOOTER TTD (3 KOLOM UNTUK SURAT JALAN) --}}
+    <div class="footer-container">
+        <table width="100%">
+            <tr>
+                <td width="33%" class="signature-box">
+                    <p>Dibuat Oleh,</p>
+                    <div class="signature-space"></div>
+                    <p class="signature-name">{{ Auth::user()->nama_lengkap ?? Auth::user()->name }}</p>
+                    <p>Staf Pengadaan</p>
+                </td>
+                <td width="33%" class="signature-box">
+                    <p>Pihak Pengirim (Vendor / Sopir),</p>
+                    <div class="signature-space"></div>
+                    <p class="signature-name">( ____________________ )</p>
+                    <p>Tanda Tangan & Nama Terang</p>
+                </td>
+                <td width="33%" class="signature-box">
+                    <p>Pihak Penerima (Logistik),</p>
+                    <div class="signature-space"></div>
+                    <p class="signature-name">( ____________________ )</p>
+                    <p>Tanda Tangan & Stempel</p>
+                </td>
+            </tr>
+        </table>
+    </div>
 
 </body>
 </html>

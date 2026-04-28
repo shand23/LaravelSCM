@@ -3,9 +3,8 @@
     {{-- HEADER LOGO --}}
     <div class="p-6 border-b border-gray-800 bg-gray-900">
         <div class="flex items-center gap-3">
-            <div class="w-10 h-10 bg-gradient-to-br from-purple-600 to-purple-800 rounded-lg flex items-center justify-center shadow-lg shadow-purple-900/50">
-                <span class="font-bold text-xl text-white">S</span>
-            </div>
+            <div class="w-20 h-20  rounded-lg flex items-center justify-center ">
+<img src="{{ asset('logo.png') }}" alt="Logo">            </div>
             <div>
                 <h2 class="text-base font-bold leading-tight tracking-wide text-gray-100">PT. Swevel</h2>
                 <p class="text-xs text-purple-400">Universal Media</p>

@@ -1,4 +1,4 @@
-<div>
+<div wire:poll.15s>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
             {{ __('Dashboard Logistik & Inventaris') }}
@@ -87,7 +87,7 @@
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 
                 {{-- Widget 1: Alur Barang (Area Chart) - Lebih Lebar (Col-Span-2) --}}
-                <div class="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between">
+                <div class="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between" wire:ignore>
                     <div class="flex justify-between items-start mb-6">
                         <div>
                             <h4 class="text-sm font-extrabold text-gray-700">Volume Alur Barang (Masuk vs Keluar)</h4>
@@ -104,7 +104,7 @@
                 </div>
 
                 {{-- Widget 2: Tren Penyesuaian (Bar Chart) --}}
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between" wire:ignore>
                     <div class="flex justify-between items-start mb-6">
                         <div>
                             <h4 class="text-sm font-extrabold text-gray-700">Tren Penyesuaian Stok</h4>
@@ -123,7 +123,8 @@
     {{-- SCRIPT CHART.JS --}}
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        document.addEventListener('livewire:initialized', () => {
+        // Gunakan livewire:navigated agar render berjalan setiap buka halaman SPA
+        document.addEventListener('livewire:navigated', () => {
             
             const dataAlur = @json($alurBarang);
             const dataPenyesuaian = @json($trenPenyesuaian);
@@ -131,89 +132,105 @@
             // ==========================================
             // WIDGET 1: ALUR BARANG MASUK VS KELUAR (AREA CHART)
             // ==========================================
-            const ctxAlur = document.getElementById('chartAlurBarang').getContext('2d');
-            
-            // Gradasi Masuk (Hijau)
-            let gradMasuk = ctxAlur.createLinearGradient(0, 0, 0, 300);
-            gradMasuk.addColorStop(0, 'rgba(16, 185, 129, 0.4)'); 
-            gradMasuk.addColorStop(1, 'rgba(16, 185, 129, 0.0)');
-
-            // Gradasi Keluar (Oranye)
-            let gradKeluar = ctxAlur.createLinearGradient(0, 0, 0, 300);
-            gradKeluar.addColorStop(0, 'rgba(249, 115, 22, 0.4)'); 
-            gradKeluar.addColorStop(1, 'rgba(249, 115, 22, 0.0)');
-
-            new Chart(ctxAlur, {
-                type: 'line',
-                data: {
-                    labels: dataAlur.labels,
-                    datasets: [
-                        {
-                            label: 'Volume Masuk (Penerimaan)',
-                            data: dataAlur.masuk,
-                            borderColor: '#10b981', // Emerald 500
-                            backgroundColor: gradMasuk,
-                            borderWidth: 2,
-                            fill: true,
-                            tension: 0.4 // Smooth curve
-                        },
-                        {
-                            label: 'Volume Keluar (Pengeluaran)',
-                            data: dataAlur.keluar,
-                            borderColor: '#f97316', // Orange 500
-                            backgroundColor: gradKeluar,
-                            borderWidth: 2,
-                            fill: true,
-                            tension: 0.4
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } }, // Legend dimatikan karena sudah dibuat kustom di HTML
-                    scales: {
-                        y: { 
-                            beginAtZero: true,
-                            grid: { borderDash: [4, 4], color: '#f3f4f6' },
-                            ticks: { font: {size: 10} }
-                        },
-                        x: { grid: { display: false }, ticks: { font: {size: 10} } }
-                    }
+            const canvasAlur = document.getElementById('chartAlurBarang');
+            if (canvasAlur) {
+                // Hancurkan chart lama sebelum render ulang
+                if (Chart.getChart('chartAlurBarang')) {
+                    Chart.getChart('chartAlurBarang').destroy();
                 }
-            });
+
+                const ctxAlur = canvasAlur.getContext('2d');
+                
+                // Gradasi Masuk (Hijau)
+                let gradMasuk = ctxAlur.createLinearGradient(0, 0, 0, 300);
+                gradMasuk.addColorStop(0, 'rgba(16, 185, 129, 0.4)'); 
+                gradMasuk.addColorStop(1, 'rgba(16, 185, 129, 0.0)');
+
+                // Gradasi Keluar (Oranye)
+                let gradKeluar = ctxAlur.createLinearGradient(0, 0, 0, 300);
+                gradKeluar.addColorStop(0, 'rgba(249, 115, 22, 0.4)'); 
+                gradKeluar.addColorStop(1, 'rgba(249, 115, 22, 0.0)');
+
+                new Chart(ctxAlur, {
+                    type: 'line',
+                    data: {
+                        labels: dataAlur.labels,
+                        datasets: [
+                            {
+                                label: 'Volume Masuk (Penerimaan)',
+                                data: dataAlur.masuk,
+                                borderColor: '#10b981', // Emerald 500
+                                backgroundColor: gradMasuk,
+                                borderWidth: 2,
+                                fill: true,
+                                tension: 0.4 // Smooth curve
+                            },
+                            {
+                                label: 'Volume Keluar (Pengeluaran)',
+                                data: dataAlur.keluar,
+                                borderColor: '#f97316', // Orange 500
+                                backgroundColor: gradKeluar,
+                                borderWidth: 2,
+                                fill: true,
+                                tension: 0.4
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } }, // Legend dimatikan karena sudah dibuat kustom di HTML
+                        scales: {
+                            y: { 
+                                beginAtZero: true,
+                                grid: { borderDash: [4, 4], color: '#f3f4f6' },
+                                ticks: { font: {size: 10} }
+                            },
+                            x: { grid: { display: false }, ticks: { font: {size: 10} } }
+                        }
+                    }
+                });
+            }
 
             // ==========================================
             // WIDGET 2: TREN PENYESUAIAN STOK (BAR CHART)
             // ==========================================
-            const ctxPenyesuaian = document.getElementById('chartTrenPenyesuaian').getContext('2d');
-            
-            new Chart(ctxPenyesuaian, {
-                type: 'bar',
-                data: {
-                    labels: dataPenyesuaian.labels,
-                    datasets: [{
-                        label: 'Frekuensi Penyesuaian',
-                        data: dataPenyesuaian.data,
-                        backgroundColor: '#ef4444', // Red 500
-                        borderRadius: 4,
-                        barThickness: 16
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        y: { 
-                            beginAtZero: true,
-                            grid: { borderDash: [4, 4], color: '#f3f4f6' },
-                            ticks: { stepSize: 1, font: {size: 10} }
-                        },
-                        x: { grid: { display: false }, ticks: { font: {size: 10} } }
-                    }
+            const canvasPenyesuaian = document.getElementById('chartTrenPenyesuaian');
+            if (canvasPenyesuaian) {
+                // Hancurkan chart lama sebelum render ulang
+                if (Chart.getChart('chartTrenPenyesuaian')) {
+                    Chart.getChart('chartTrenPenyesuaian').destroy();
                 }
-            });
+
+                const ctxPenyesuaian = canvasPenyesuaian.getContext('2d');
+                
+                new Chart(ctxPenyesuaian, {
+                    type: 'bar',
+                    data: {
+                        labels: dataPenyesuaian.labels,
+                        datasets: [{
+                            label: 'Frekuensi Penyesuaian',
+                            data: dataPenyesuaian.data,
+                            backgroundColor: '#ef4444', // Red 500
+                            borderRadius: 4,
+                            barThickness: 16
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: { 
+                                beginAtZero: true,
+                                grid: { borderDash: [4, 4], color: '#f3f4f6' },
+                                ticks: { stepSize: 1, font: {size: 10} }
+                            },
+                            x: { grid: { display: false }, ticks: { font: {size: 10} } }
+                        }
+                    }
+                });
+            }
 
         });
     </script>

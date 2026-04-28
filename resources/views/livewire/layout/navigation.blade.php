@@ -8,12 +8,20 @@ new class extends Component
     /**
      * Log the current user out of the application.
      */
-    public function logout(Logout $logout): void
-    {
-        $logout();
+    public function logout(): void
+{
+    // 1. Keluar dari Guard Web
+    auth()->guard('web')->logout();
 
-        $this->redirect('/', navigate: true);
-    }
+    // 2. Hancurkan sesi yang sedang berjalan di server
+    session()->invalidate();
+
+    // 3. Buat ulang token CSRF agar sesi berikutnya bersih (mencegah Page Expired)
+    session()->regenerateToken();
+
+    // 4. Redirect WAJIB tanpa navigate: true agar browser melakukan full-reload
+    $this->redirect('/login'); 
+}
 }; ?>
 
 <nav x-data="{ open: false }" class="bg-white border-b border-gray-100">

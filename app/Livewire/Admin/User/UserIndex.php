@@ -93,14 +93,14 @@ class UserIndex extends Component
             $this->can_manage_master = false;
         }
 
-        $data = [
-            'nama_lengkap' => $this->nama_lengkap,
-            'email' => $this->email,
-            'ROLE' => $this->ROLE,
-            'status_user' => $this->status_user,
-            'jabatan' => $this->jabatan,
-            'can_manage_master' => $this->can_manage_master, // Pastikan ini ada
-        ];
+       $data = [
+    'nama_lengkap' => $this->nama_lengkap,
+    'email' => $this->email,
+    'ROLE' => $this->ROLE, // Ini sangat penting agar boot() di model bisa baca prefix
+    'status_user' => $this->status_user,
+    'jabatan' => $this->jabatan,
+    'can_manage_master' => $this->can_manage_master,
+];
 
         if (!empty($this->password)) {
             $data['password'] = \Illuminate\Support\Facades\Hash::make($this->password);
