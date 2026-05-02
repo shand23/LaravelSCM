@@ -177,7 +177,7 @@
 @endif
 
                                     {{-- 4. TOMBOL BUAT LAPORAN (Hanya jika Diproses Sebagian atau Selesai) --}}
-                                    @if(in_array($p->status_permintaan, ['Diproses Sebagian', 'Selesai']))
+                                    @if(in_array($p->status_permintaan, ['Selesai']))
                                         @if(!collect($usedPermintaanIds)->contains($p->id_permintaan))
                                             <a href="{{ route('pelaksanaan.penggunaan', ['id_permintaan' => $p->id_permintaan]) }}" 
                                                class="text-emerald-600 hover:text-white hover:bg-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200 transition-colors font-semibold inline-block">

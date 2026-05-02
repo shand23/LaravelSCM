@@ -10,17 +10,12 @@ new class extends Component
      */
     public function logout(): void
 {
-    // 1. Keluar dari Guard Web
     auth()->guard('web')->logout();
 
-    // 2. Hancurkan sesi yang sedang berjalan di server
     session()->invalidate();
+    session()->regenerateToken(); 
 
-    // 3. Buat ulang token CSRF agar sesi berikutnya bersih (mencegah Page Expired)
-    session()->regenerateToken();
-
-    // 4. Redirect WAJIB tanpa navigate: true agar browser melakukan full-reload
-    $this->redirect('/login'); 
+    $this->redirect('/login');
 }
 }; ?>
 

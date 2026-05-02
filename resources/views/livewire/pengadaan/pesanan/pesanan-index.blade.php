@@ -2,7 +2,7 @@
     {{-- HEADER --}}
     <div class="mb-6">
         <h1 class="text-2xl font-bold text-gray-800">Manajemen Pesanan & RFQ</h1>
-        <p class="text-sm text-gray-500 mt-1">Kelola Pengajuan Pembelian dan buat Request for Quotation ke Supplier</p>
+        <p class="text-sm text-gray-500 mt-1">Kelola Pengajuan Pembelian dan buat Request for Quotation ke Supplier (Split Order/Pesanan Terpecah)</p>
     </div>
 
     {{-- ALERTS --}}
@@ -24,7 +24,7 @@
         <div class="bg-blue-50/50 border-b border-gray-200 px-6 py-4">
             <h2 class="text-base font-bold text-gray-800 flex items-center gap-2">
                 <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
-                Antrean Pengajuan Pembelian (Menunggu Diproses)
+                Antrean Pengajuan Pembelian (Menunggu Diproses) - *Split Order: satu PR bisa dibuat beberapa RFQ*
             </h2>
         </div>
         <div class="overflow-x-auto">
@@ -47,7 +47,7 @@
                             </td>
                             <td class="px-6 py-4 text-right">
                                 <button wire:click="createFromPR('{{ $pr->id_pengajuan }}')" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition-colors shadow-sm">
-                                    Buat RFQ
+                                    Buat RFQ (Split Order)
                                 </button>
                             </td>
                         </tr>
@@ -107,25 +107,22 @@
                                 </span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-center">
-    {{-- Tombol PDF/Cetak (Bisa diakses siapa saja, tapi bisa mengubah status Draft) --}}
-    <button wire:click="cetakPDF('{{ $psn->id_pesanan }}')" class="text-blue-600 hover:text-blue-900 bg-blue-50 px-3 py-1.5 rounded-md border border-blue-200 transition-colors mx-1" title="Cetak RFQ">
-        <svg class="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
-        Cetak RFQ
-    </button>
-                              @if($psn->status_pesanan === 'Draft')
-        {{-- Hanya muncul jika statusnya Draft DAN user yang login adalah pembuatnya --}}
-        @if($psn->id_user_pengadaan == auth()->user()->id_user)
-            <button wire:click="edit('{{ $psn->id_pesanan }}')" class="text-yellow-600 hover:text-yellow-900 bg-yellow-50 px-3 py-1.5 rounded-md border border-yellow-200 transition-colors mx-1">
-                Edit
-            </button>
-            <button wire:click="delete('{{ $psn->id_pesanan }}')" wire:confirm="Yakin menghapus RFQ ini?" class="text-red-600 hover:text-red-900 bg-red-50 px-3 py-1.5 rounded-md border border-red-200 transition-colors mx-1">
-                Hapus
-            </button>
-        @else
-            {{-- Pesan opsional jika user lain melihat RFQ Draft milik temannya --}}
-            <span class="text-gray-400 italic text-xs ml-2">Read-Only</span>
-        @endif
-    @endif
+                                <button wire:click="cetakPDF('{{ $psn->id_pesanan }}')" class="text-blue-600 hover:text-blue-900 bg-blue-50 px-3 py-1.5 rounded-md border border-blue-200 transition-colors mx-1" title="Cetak RFQ">
+                                    <svg class="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                                    Cetak RFQ
+                                </button>
+                                @if($psn->status_pesanan === 'Draft')
+                                    @if($psn->id_user_pengadaan == auth()->user()->id_user)
+                                        <button wire:click="edit('{{ $psn->id_pesanan }}')" class="text-yellow-600 hover:text-yellow-900 bg-yellow-50 px-3 py-1.5 rounded-md border border-yellow-200 transition-colors mx-1">
+                                            Edit
+                                        </button>
+                                        <button wire:click="delete('{{ $psn->id_pesanan }}')" wire:confirm="Yakin menghapus RFQ ini?" class="text-red-600 hover:text-red-900 bg-red-50 px-3 py-1.5 rounded-md border border-red-200 transition-colors mx-1">
+                                            Hapus
+                                        </button>
+                                    @else
+                                        <span class="text-gray-400 italic text-xs ml-2">Read-Only</span>
+                                    @endif
+                                @endif
                             </td>
                         </tr>
                     @empty
@@ -139,14 +136,14 @@
         </div>
     </div>
 
-    {{-- MODAL BUAT/EDIT RFQ --}}
+    {{-- MODAL BUAT/EDIT RFQ dengan dukungan SPLIT ORDER --}}
     @if($isModalOpen)
     <div class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900 bg-opacity-60 backdrop-blur-sm p-4">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
             <div class="bg-gray-50 px-6 py-4 border-b border-gray-200 flex justify-between items-center">
                 <h2 class="text-lg font-bold text-gray-800 flex items-center gap-2">
                     <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                    {{ $isEditMode ? 'Edit Request for Quotation (RFQ)' : 'Buat Request for Quotation (RFQ)' }}
+                    {{ $isEditMode ? 'Edit Request for Quotation (RFQ)' : 'Buat Request for Quotation (RFQ) - Split Order' }}
                 </h2>
                 <button wire:click="closeModal" class="text-gray-400 hover:text-red-500 transition-colors p-1">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -164,7 +161,6 @@
                             @error('tanggal_pesanan') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
                         </div>
                         
-                        {{-- DIUBAH: Bukan lagi dropdown, tapi sekadar teks baca saja berdasarkan data yang diteruskan --}}
                         <div>
                             <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Referensi PR</label>
                             <input type="text" readonly value="{{ $id_pengajuan }}" class="w-full border-gray-300 rounded-lg shadow-sm border px-3 py-2 text-sm bg-gray-100 text-gray-500 font-bold cursor-not-allowed">
@@ -183,7 +179,8 @@
                     </div>
 
                     <div class="mb-2 flex justify-between items-end border-b border-gray-200 pb-2">
-                        <h3 class="text-sm font-bold text-gray-700 uppercase tracking-widest">Pilih Material & Tentukan Qty Pesan</h3>
+                        <h3 class="text-sm font-bold text-gray-700 uppercase tracking-widest">Pilih Material & Tentukan Qty Pesan (Split Order)</h3>
+                        <span class="text-xs text-gray-500">*Sisa kebutuhan akan otomatis terupdate</span>
                     </div>
                     
                     @error('items') 
@@ -198,21 +195,33 @@
                             </div>
                             <div class="flex-1">
                                 <p class="text-sm font-bold text-gray-900">{{ $item['nama_material'] }}</p>
-                                <div class="flex items-center gap-2 mt-1">
-                                    <span class="text-[10px] bg-gray-200 text-gray-700 px-2 py-0.5 rounded font-bold uppercase tracking-wider">Minta: {{ $item['jumlah_asal'] }} {{ $item['satuan'] }}</span>
+                                <div class="flex items-center gap-2 mt-1 flex-wrap">
+                                    <span class="text-[10px] bg-gray-200 text-gray-700 px-2 py-0.5 rounded font-bold uppercase tracking-wider">
+                                        Minta: {{ $item['jumlah_asal'] }} {{ $item['satuan'] }}
+                                    </span>
+                                    @if(isset($item['sisa_kebutuhan']))
+                                        <span class="text-[10px] bg-blue-100 text-blue-800 px-2 py-0.5 rounded font-bold">
+                                            Sisa perlu: {{ $item['sisa_kebutuhan'] }} {{ $item['satuan'] }}
+                                        </span>
+                                    @endif
                                 </div>
                             </div>
                             <div class="w-32 text-right">
                                 <label class="text-[10px] font-bold text-gray-500 block uppercase tracking-wider mb-1">Qty Dipesan</label>
                                 <div class="flex shadow-sm rounded-md">
-                                    <input type="number" wire:model="items.{{ $index }}.jumlah_pesan" min="1" 
+                                    <input type="number" 
+                                           wire:model="items.{{ $index }}.jumlah_pesan" 
+                                           min="1" 
+                                           max="{{ $item['sisa_kebutuhan'] ?? $item['jumlah_asal'] }}"
                                            class="w-full border-gray-300 rounded-l-md text-sm py-1.5 px-2 text-center focus:ring-blue-500 focus:border-blue-500 {{ !$item['selected'] ? 'bg-gray-100 text-gray-400' : 'bg-white' }}"
                                            {{ !$item['selected'] ? 'disabled' : '' }}>
                                     <span class="inline-flex items-center px-2 rounded-r-md border border-l-0 border-gray-300 bg-gray-100 text-xs font-bold text-gray-600">
                                         {{ $item['satuan'] }}
                                     </span>
                                 </div>
-                                @error("items.$index.jumlah_pesan") <span class="text-red-500 text-[10px] mt-1 block text-left">{{ $message }}</span> @enderror
+                                @error("items.$index.jumlah_pesan") 
+                                    <span class="text-red-500 text-[10px] mt-1 block text-left">{{ $message }}</span> 
+                                @enderror
                             </div>
                         </div>
                         @endforeach
@@ -220,7 +229,7 @@
 
                     <div class="flex justify-end space-x-3 mt-8 pt-5 border-t border-gray-200">
                         <button type="button" wire:click="closeModal" class="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium px-5 py-2 rounded-lg transition-colors">Batal</button>
-                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2 rounded-lg shadow-md transition-colors flex items-center gap-2" @if(empty($items)) disabled @endif>
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2 rounded-lg shadow-md transition-colors flex items-center gap-2">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
                             {{ $isEditMode ? 'Simpan Perubahan' : 'Simpan & Buat Draf RFQ' }}
                         </button>

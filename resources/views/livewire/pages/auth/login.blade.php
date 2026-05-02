@@ -26,15 +26,13 @@ public function login(): void
     $this->validate();
     $this->form->authenticate();
 
-    // 1. Regenerasi sesi untuk keamanan (mencegah session fixation)
+    // Regenerasi sesi untuk keamanan
     session()->regenerate();
 
-    // 2. Gunakan redirectIntended. Ini akan otomatis mencari URL 
-    // yang sebelumnya diakses user atau ke dashboard jika tidak ada.
-    // Menghapus penggunaan $this->js(...) akan mencegah Page Expired.
-    $this->redirectIntended(default: route('dashboard', absolute: false), navigate: true);
-}
-    }; ?>
+    // 🔴 HAPUS navigate: true – gunakan full redirect
+    // Redirect intended tanpa navigate (default false)
+    $this->redirectIntended(default: route('dashboard', absolute: false), navigate: false);
+}   }; ?>
 
 <div class="login-wrapper">
     <style>

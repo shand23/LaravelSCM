@@ -299,14 +299,37 @@
 
     {{-- LOGOUT --}}
     <div class="p-4 border-t border-gray-800 bg-gray-900">
-        <form method="POST" action="{{ route('logout') }}">
-            @csrf
-            <button type="submit" class="w-full flex items-center justify-between px-4 py-3 rounded-xl text-gray-400 hover:bg-red-500/10 hover:text-red-400 transition-all duration-200 group">
-                <div class="flex items-center gap-3">
-                    <svg class="w-5 h-5 group-hover:rotate-180 transition-transform duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
-                    <span class="font-medium text-sm">Logout</span>
-                </div>
-            </button>
-        </form>
+        <form id="logout-form" method="POST" action="{{ route('logout') }}" style="display: none;">
+    @csrf
+</form>
+
+<form id="logout-form" method="POST" action="{{ route('logout') }}" style="display: none;">
+    @csrf
+</form>
+
+<button type="button" 
+        onclick="stopAllPollingAndLogout()" 
+        class="w-full flex items-center justify-between px-4 py-3 rounded-xl text-gray-400 hover:bg-red-500/10 hover:text-red-400 transition-all duration-200 group">
+    <div class="flex items-center gap-3">
+        <svg class="w-5 h-5 group-hover:rotate-180 transition-transform duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+        </svg>
+        <span class="font-medium text-sm">Logout</span>
+    </div>
+</button>
+
+<script>
+    function stopAllPollingAndLogout() {
+        // Cara paling kasar: hentikan semua interval yang mungkin ada
+        var maxId = window.setTimeout(function() {}, 0);
+        for (var i = 0; i < maxId; i++) {
+            window.clearInterval(i);
+            window.clearTimeout(i);
+        }
+        
+        // Kirim request logout via form submit
+        document.getElementById('logout-form').submit();
+    }
+</script>
     </div>
 </aside>
