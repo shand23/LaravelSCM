@@ -289,6 +289,15 @@ public function login(): void
                     <x-input-error :messages="$errors->get('form.password')" class="mt-2" />
                 </div>
 
+                {{-- 🔗 Lupa Password (TAMBAHAN SATU-SATUNYA) --}}
+                <div class="flex justify-end mt-1">
+                    @if (Route::has('password.request'))
+                        <a href="{{ route('password.request') }}" class="text-sm font-semibold text-indigo-600 hover:text-indigo-800 transition">
+                            Lupa password?
+                        </a>
+                    @endif
+                </div>
+
               {{-- Verifikasi Math Captcha --}}
                 <div class="bg-indigo-50/50 p-4 rounded-2xl border border-indigo-100">
                     <label class="block text-sm font-bold text-indigo-900 mb-3 text-center">
