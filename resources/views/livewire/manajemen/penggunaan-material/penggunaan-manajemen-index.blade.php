@@ -178,10 +178,10 @@
                             <tbody class="divide-y divide-gray-200 bg-white">
                                 @foreach($detailItems as $detail)
                                 <tr>
-                                    <td class="px-4 py-3 text-sm font-bold text-gray-800">{{ $detail->material->nama_material ?? '-' }}</td
-                                    <td class="px-4 py-3 text-sm text-center font-black text-blue-600 bg-blue-50/30">{{ $detail->jumlah_terpasang_riil }} {{ $detail->material->satuan }}</td
-                                    <td class="px-4 py-3 text-sm text-center font-bold text-red-600">{{ $detail->jumlah_rusak_lapangan }}</td
-                                    <td class="px-4 py-3 text-sm text-center font-bold text-yellow-600">{{ $detail->jumlah_sisa_material }}</td
+                                    <td class="px-4 py-3 text-sm font-bold text-gray-800">{{ $detail->material->nama_material ?? '-' }}</td>
+                                    <td class="px-4 py-3 text-sm text-center font-black text-blue-600 bg-blue-50/30">{{ $detail->jumlah_terpasang_riil }} {{ $detail->material->satuan }}</td>
+                                    <td class="px-4 py-3 text-sm text-center font-bold text-red-600">{{ $detail->jumlah_rusak_lapangan }}</td>
+                                    <td class="px-4 py-3 text-sm text-center font-bold text-yellow-600">{{ $detail->jumlah_sisa_material }}</td>
                                 </tr>
                                 @endforeach
                             </tbody>
