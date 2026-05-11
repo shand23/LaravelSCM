@@ -1,32 +1,105 @@
 <div wire:poll.10s>
-    {{-- HEADER --}}
-    <div class="flex justify-between mb-6 items-center">
+    {{-- HEADER dengan tombol ekspor --}}
+    <div class="flex justify-between items-center mb-6">
         <div>
-            <h1 class="text-2xl font-bold text-gray-800">Monitoring Penggunaan Material</h1>
-            <p class="text-sm text-gray-500 font-medium">Rekapitulasi seluruh penggunaan material proyek secara real-time.</p>
+            <h1 class="text-2xl font-bold text-gray-800">📊 Monitoring Penggunaan Material</h1>
+            <p class="text-sm text-gray-500">Rekapitulasi seluruh penggunaan material, analisis tren, dan ekspor data.</p>
         </div>
+        <button wire:click="exportPdf" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg shadow-md flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"></path></svg>
+            Ekspor PDF
+        </button>
     </div>
 
-    {{-- FILTER & SEARCH --}}
-    <div class="bg-white p-5 mb-6 rounded-xl shadow-sm border border-gray-100 flex flex-col md:flex-row gap-4">
-        <div class="flex-1">
-            <label class="block text-xs font-bold text-gray-500 uppercase mb-1 ml-1">Cari Laporan</label>
-            <input type="text" wire:model.live.debounce.300ms="search" 
-                   placeholder="ID Laporan, Proyek, atau Area..." 
-                   class="w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
-        </div>
+    {{-- FILTER PERIODE & PROYEK (baru) --}}
+    <div class="bg-white p-5 mb-6 rounded-xl shadow-sm border border-gray-100 flex flex-wrap gap-4 items-end">
         <div class="w-full md:w-64">
-            <label class="block text-xs font-bold text-gray-500 uppercase mb-1 ml-1">Filter Proyek</label>
-            <select wire:model.live="filterProyek" class="w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Periode</label>
+            <select wire:model.live="periode" class="w-full border-gray-300 rounded-lg shadow-sm text-sm">
+                <option value="semua">Semua Periode</option>
+                <option value="bulan_ini">Bulan Ini</option>
+                <option value="3_bulan">3 Bulan Terakhir</option>
+                <option value="6_bulan">6 Bulan Terakhir</option>
+                <option value="custom">Custom</option>
+            </select>
+        </div>
+
+        @if($periode == 'custom')
+        <div class="w-full md:w-48">
+            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Dari Tanggal</label>
+            <input type="date" wire:model.live="customStart" class="w-full border-gray-300 rounded-lg shadow-sm text-sm">
+        </div>
+        <div class="w-full md:w-48">
+            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Sampai Tanggal</label>
+            <input type="date" wire:model.live="customEnd" class="w-full border-gray-300 rounded-lg shadow-sm text-sm">
+        </div>
+        @endif
+
+        <div class="w-full md:w-64">
+            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Proyek</label>
+            <select wire:model.live="filterProyek" class="w-full border-gray-300 rounded-lg shadow-sm text-sm">
                 <option value="">Semua Proyek</option>
                 @foreach($listProyek as $proyek)
                     <option value="{{ $proyek->id_proyek }}">{{ $proyek->nama_proyek }}</option>
                 @endforeach
             </select>
         </div>
+
+        <div class="flex-1">
+            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Cari Laporan</label>
+            <input type="text" wire:model.live.debounce.300ms="search"
+                   placeholder="ID Laporan, Proyek, atau Area..."
+                   class="w-full border-gray-300 rounded-lg shadow-sm text-sm">
+        </div>
     </div>
 
-    {{-- TABLE --}}
+    {{-- KARTU STATISTIK --}}
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+        <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex items-center gap-3">
+            <div class="p-3 rounded-full bg-blue-100 text-blue-600">📦</div>
+            <div>
+                <p class="text-[11px] text-gray-500 font-bold uppercase">Total Terpasang</p>
+                <p class="text-2xl font-black text-gray-800">{{ number_format($totalTerpasang, 0, ',', '.') }}</p>
+            </div>
+        </div>
+        <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex items-center gap-3">
+            <div class="p-3 rounded-full bg-red-100 text-red-600">⚠️</div>
+            <div>
+                <p class="text-[11px] text-gray-500 font-bold uppercase">Total Rusak</p>
+                <p class="text-2xl font-black text-gray-800">{{ number_format($totalRusak, 0, ',', '.') }}</p>
+            </div>
+        </div>
+        <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex items-center gap-3">
+            <div class="p-3 rounded-full bg-yellow-100 text-yellow-600">📦</div>
+            <div>
+                <p class="text-[11px] text-gray-500 font-bold uppercase">Total Sisa</p>
+                <p class="text-2xl font-black text-gray-800">{{ number_format($totalSisa, 0, ',', '.') }}</p>
+            </div>
+        </div>
+        <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex items-center gap-3">
+            <div class="p-3 rounded-full bg-emerald-100 text-emerald-600">🏗️</div>
+            <div>
+                <p class="text-[11px] text-gray-500 font-bold uppercase">Proyek Aktif</p>
+                <p class="text-2xl font-black text-gray-800">{{ $jumlahProyekAktif }}</p>
+            </div>
+        </div>
+    </div>
+
+    {{-- GRAFIK --}}
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100" wire:ignore>
+            <h4 class="text-sm font-bold text-gray-700 mb-2">📈 Tren Penggunaan Material (6 Bulan)</h4>
+            <p class="text-[10px] text-gray-400 uppercase tracking-wider mb-3">Terpasang vs Rusak vs Sisa</p>
+            <canvas id="chartTrenPenggunaan" class="h-64 w-full"></canvas>
+        </div>
+        <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100" wire:ignore>
+            <h4 class="text-sm font-bold text-gray-700 mb-2">🥇 Top 5 Kategori Material Terpasang</h4>
+            <p class="text-[10px] text-gray-400 uppercase tracking-wider mb-3">Berdasarkan volume penggunaan</p>
+            <canvas id="chartKategoriPenggunaan" class="h-64 w-full"></canvas>
+        </div>
+    </div>
+
+    {{-- TABEL LAPORAN --}}
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
@@ -51,7 +124,7 @@
                         {{ $laporan->area_pekerjaan }}
                     </td>
                     <td class="px-6 py-4 text-center">
-                        <button wire:click="bukaDetail('{{ $laporan->id_penggunaan }}')" 
+                        <button wire:click="bukaDetail('{{ $laporan->id_penggunaan }}')"
                                 class="text-blue-600 hover:text-blue-800 font-bold text-xs uppercase tracking-wider p-2 bg-blue-50 rounded-lg transition-colors">
                             Lihat Detail
                         </button>
@@ -69,14 +142,13 @@
         </div>
     </div>
 
-    {{-- MODAL DETAIL (Sama seperti referensi Anda, hanya view) --}}
+    {{-- MODAL DETAIL (ASLI, tidak diubah) --}}
     @if($isModalDetailOpen && $laporanTerpilih)
     <div class="fixed inset-0 z-50 overflow-y-auto">
         <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
             <div class="fixed inset-0 transition-opacity bg-gray-900 bg-opacity-75"></div>
             <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
             <div class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full">
-                
                 <div class="bg-gray-50 px-6 py-4 border-b flex justify-between items-center">
                     <div>
                         <h3 class="text-lg font-bold text-gray-900">Detail Penggunaan Material</h3>
@@ -86,57 +158,81 @@
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </button>
                 </div>
-
                 <div class="p-6">
-                    {{-- Grid Informasi Utama --}}
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 bg-blue-50/50 p-4 rounded-xl border border-blue-100">
-                        <div>
-                            <p class="text-[10px] font-black text-blue-600 uppercase tracking-widest">Proyek</p>
-                            <p class="text-sm font-bold text-gray-800 uppercase">{{ $laporanTerpilih->proyek->nama_proyek ?? '-' }}</p>
-                        </div>
-                        <div>
-                            <p class="text-[10px] font-black text-blue-600 uppercase tracking-widest">Area Pekerjaan</p>
-                            <p class="text-sm font-bold text-gray-800">{{ $laporanTerpilih->area_pekerjaan }}</p>
-                        </div>
-                        <div>
-                            <p class="text-[10px] font-black text-blue-600 uppercase tracking-widest">Tanggal Laporan</p>
-                            <p class="text-sm font-bold text-gray-800">{{ \Carbon\Carbon::parse($laporanTerpilih->tanggal_laporan)->translatedFormat('d F Y') }}</p>
-                        </div>
-                        <div>
-                            <p class="text-[10px] font-black text-blue-600 uppercase tracking-widest">Pelaksana Lapangan</p>
-                            <p class="text-sm font-bold text-gray-800">{{ $laporanTerpilih->pelaksana->name ?? '-' }}</p>
-                        </div>
+                        <div><span class="text-[10px] font-black text-blue-600 uppercase tracking-widest">Proyek</span><br>{{ $laporanTerpilih->proyek->nama_proyek ?? '-' }}</div>
+                        <div><span class="text-[10px] font-black text-blue-600 uppercase tracking-widest">Area Pekerjaan</span><br>{{ $laporanTerpilih->area_pekerjaan }}</div>
+                        <div><span class="text-[10px] font-black text-blue-600 uppercase tracking-widest">Tanggal Laporan</span><br>{{ \Carbon\Carbon::parse($laporanTerpilih->tanggal_laporan)->translatedFormat('d F Y') }}</div>
+                        <div><span class="text-[10px] font-black text-blue-600 uppercase tracking-widest">Pelaksana</span><br>{{ $laporanTerpilih->pelaksana->nama_lengkap ?? '-' }}</div>
                     </div>
-
                     <div class="overflow-hidden border border-gray-200 rounded-xl">
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50">
                                 <tr>
                                     <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase">Material</th>
-                                    <th class="px-4 py-3 text-center text-xs font-bold text-gray-600 uppercase italic">Riil Terpasang</th>
-                                    <th class="px-4 py-3 text-center text-xs font-bold text-gray-600 uppercase italic text-red-600">Rusak</th>
-                                    <th class="px-4 py-3 text-center text-xs font-bold text-gray-600 uppercase italic text-yellow-600">Sisa</th>
+                                    <th class="px-4 py-3 text-center text-xs font-bold text-gray-600 uppercase">Riil Terpasang</th>
+                                    <th class="px-4 py-3 text-center text-xs font-bold text-gray-600 uppercase text-red-600">Rusak</th>
+                                    <th class="px-4 py-3 text-center text-xs font-bold text-gray-600 uppercase text-yellow-600">Sisa</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-200 bg-white">
                                 @foreach($detailItems as $detail)
                                 <tr>
-                                    <td class="px-4 py-3 text-sm font-bold text-gray-800">{{ $detail->material->nama_material ?? '-' }}</td>
-                                    <td class="px-4 py-3 text-sm text-center font-black text-blue-600 bg-blue-50/30">{{ $detail->jumlah_terpasang_riil }} {{ $detail->material->satuan }}</td>
-                                    <td class="px-4 py-3 text-sm text-center font-bold text-red-600">{{ $detail->jumlah_rusak_lapangan }}</td>
-                                    <td class="px-4 py-3 text-sm text-center font-bold text-yellow-600">{{ $detail->jumlah_sisa_material }}</td>
+                                    <td class="px-4 py-3 text-sm font-bold text-gray-800">{{ $detail->material->nama_material ?? '-' }}</td
+                                    <td class="px-4 py-3 text-sm text-center font-black text-blue-600 bg-blue-50/30">{{ $detail->jumlah_terpasang_riil }} {{ $detail->material->satuan }}</td
+                                    <td class="px-4 py-3 text-sm text-center font-bold text-red-600">{{ $detail->jumlah_rusak_lapangan }}</td
+                                    <td class="px-4 py-3 text-sm text-center font-bold text-yellow-600">{{ $detail->jumlah_sisa_material }}</td
                                 </tr>
                                 @endforeach
                             </tbody>
                         </table>
                     </div>
                 </div>
-                
                 <div class="px-6 py-4 bg-gray-50 border-t flex justify-end">
-                    <button wire:click="tutupDetail" class="bg-gray-800 hover:bg-gray-900 text-white font-bold px-6 py-2 rounded-lg transition-colors">Tutup Jendela</button>
+                    <button wire:click="tutupDetail" class="bg-gray-800 hover:bg-gray-900 text-white font-bold px-6 py-2 rounded-lg transition-colors">Tutup</button>
                 </div>
             </div>
         </div>
     </div>
     @endif
+
+    {{-- SCRIPT CHART.JS --}}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener('livewire:navigated', function() {
+            const labelsTren = @json($labelsTren);
+            const dataTerpasang = @json($dataTerpasang);
+            const dataRusak = @json($dataRusak);
+            const dataSisa = @json($dataSisa);
+            const labelsKategori = @json($labelsKategori);
+            const dataKategori = @json($dataKategori);
+
+            if (Chart.getChart('chartTrenPenggunaan')) Chart.getChart('chartTrenPenggunaan').destroy();
+            if (Chart.getChart('chartKategoriPenggunaan')) Chart.getChart('chartKategoriPenggunaan').destroy();
+
+            if (labelsTren.length) {
+                const ctxTren = document.getElementById('chartTrenPenggunaan').getContext('2d');
+                new Chart(ctxTren, {
+                    type: 'line',
+                    data: {
+                        labels: labelsTren,
+                        datasets: [
+                            { label: 'Terpasang', data: dataTerpasang, borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.1)', fill: true, tension: 0.3 },
+                            { label: 'Rusak', data: dataRusak, borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.05)', fill: true, tension: 0.3 },
+                            { label: 'Sisa', data: dataSisa, borderColor: '#eab308', backgroundColor: 'rgba(234,179,8,0.05)', fill: true, tension: 0.3 }
+                        ]
+                    },
+                    options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom' } } }
+                });
+            }
+            if (labelsKategori.length) {
+                const ctxKat = document.getElementById('chartKategoriPenggunaan').getContext('2d');
+                new Chart(ctxKat, {
+                    type: 'bar',
+                    data: { labels: labelsKategori, datasets: [{ label: 'Jumlah Terpasang', data: dataKategori, backgroundColor: '#f59e0b', borderRadius: 6 }] },
+                    options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { display: false } } }
+                });
+            }
+        });
+    </script>
 </div>

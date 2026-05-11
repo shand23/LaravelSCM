@@ -108,37 +108,49 @@ class PenugasanIndex extends Component
     }
 
     public function render()
-    {
-        $query = PenugasanProyek::with(['user', 'proyek']);
+{
+    $query = PenugasanProyek::with(['user', 'proyek']);
 
-        if ($this->search) {
-            $query->where('peran_proyek', 'like', '%' . $this->search . '%')
-                  ->orWhereHas('user', function($q) {
-                      $q->where('nama_lengkap', 'like', '%' . $this->search . '%'); // Pakai nama_lengkap
-                  })
-                  ->orWhereHas('proyek', function($q) {
-                      $q->where('nama_proyek', 'like', '%' . $this->search . '%');
-                  });
-        }
-
-        if ($this->filterProyek) {
-            $query->where('id_proyek', $this->filterProyek);
-        }
-
-        if ($this->filterStatus) {
-            $query->where('status_penugasan', $this->filterStatus);
-        }
-
-        $penugasans = $query->orderBy($this->sortColumn, $this->sortDirection)->paginate(10);
-        
-        $daftarProyek = Proyek::where('status_proyek', '!=', 'Selesai')->get();
-        
-        // HANYA MENGAMBIL USER DENGAN ROLE 'Tim Pelaksanaan'
-        $daftarUser = User::where('ROLE', 'Tim Pelaksanaan')->get(); 
-
-        return view('livewire.manajemen.penugasan.penugasan-index', compact('penugasans', 'daftarProyek', 'daftarUser'))
-            ->layout('layouts.app');
+    if ($this->search) {
+        $query->where('peran_proyek', 'like', '%' . $this->search . '%')
+              ->orWhereHas('user', function($q) {
+                  $q->where('nama_lengkap', 'like', '%' . $this->search . '%');
+              })
+              ->orWhereHas('proyek', function($q) {
+                  $q->where('nama_proyek', 'like', '%' . $this->search . '%');
+              });
     }
+
+    if ($this->filterProyek) {
+        $query->where('id_proyek', $this->filterProyek);
+    }
+
+    if ($this->filterStatus) {
+        $query->where('status_penugasan', $this->filterStatus);
+    }
+
+    $penugasans = $query->orderBy($this->sortColumn, $this->sortDirection)->paginate(10);
+    
+    $daftarProyek = Proyek::where('status_proyek', '!=', 'Selesai')->get();
+    
+    // MENGAMBIL USER DENGAN ROLE 'Tim Pelaksanaan' dengan filter penugasan aktif
+    $queryUser = User::where('ROLE', 'Tim Pelaksanaan');
+    
+    // Jika mode tambah dan ada proyek yang dipilih, filter user yang belum ditugaskan aktif di proyek tersebut
+    if (!$this->isEditMode && $this->id_proyek) {
+        $queryUser->whereNotIn('id_user', function($sub) {
+            $sub->select('id_user')
+                ->from('penugasan_proyek')
+                ->where('id_proyek', $this->id_proyek)
+                ->where('status_penugasan', 'Aktif');
+        });
+    }
+    
+    $daftarUser = $queryUser->get();
+
+    return view('livewire.manajemen.penugasan.penugasan-index', compact('penugasans', 'daftarProyek', 'daftarUser'))
+        ->layout('layouts.app');
+}
 
     public function create()
     {
