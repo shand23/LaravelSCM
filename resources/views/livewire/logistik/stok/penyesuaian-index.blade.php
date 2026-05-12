@@ -11,9 +11,9 @@
     </div>
 
     {{-- ========================================== --}}
-    {{-- WIDGET GRAFIK ANALITIK --}}
+    {{-- WIDGET GRAFIK ANALITIK (DENGAN wire:ignore) --}}
     {{-- ========================================== --}}
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+    <div wire:ignore class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         {{-- Card 1: Grafik Donat (Komposisi Jenis) --}}
         <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between">
             <div>
@@ -47,9 +47,7 @@
         </div>
     </div>
 
-    {{-- ========================================== --}}
-    {{-- TABEL DATA RIWAYAT --}}
-    {{-- ========================================== --}}
+    {{-- TABEL DATA RIWAYAT (TIDAK BERUBAH) --}}
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div class="p-5 border-b bg-white flex flex-col md:flex-row justify-between items-center gap-4">
             <div class="relative w-full md:w-96">
@@ -151,7 +149,7 @@
         </div>
     </div>
 
-    {{-- MODAL PREVIEW FOTO --}}
+    {{-- MODAL PREVIEW FOTO (TIDAK BERUBAH) --}}
     @if($isModalFotoOpen)
     <div class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/90 backdrop-blur-sm p-4">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden animate-[fadeIn_0.1s_ease-in]">
@@ -177,27 +175,29 @@
     </div>
     @endif
 
-    {{-- SCRIPT INISIALISASI CHART.JS --}}
+    {{-- SCRIPT INISIALISASI CHART.JS YANG TAHAN TERHADAP POLLING --}}
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        document.addEventListener('livewire:initialized', () => {
+        function initCharts() {
             const dataJenis = @json($grafikJenis);
             const dataTren = @json($grafikTren);
 
-            // 1. Inisialisasi Chart Donat (Jenis Kendala)
-            if(Object.keys(dataJenis).length > 0) {
-                const ctxJenis = document.getElementById('chartJenis');
-                
-                // Pemetaan warna agar sesuai dengan warna badge UI
+            // Hancurkan chart lama jika ada
+            const chartJenisOld = Chart.getChart('chartJenis');
+            const chartTrenOld = Chart.getChart('chartTren');
+            if (chartJenisOld) chartJenisOld.destroy();
+            if (chartTrenOld) chartTrenOld.destroy();
+
+            // 1. Grafik Donat (Jenis Kendala)
+            if (Object.keys(dataJenis).length > 0 && document.getElementById('chartJenis')) {
+                const ctxJenis = document.getElementById('chartJenis').getContext('2d');
                 const warnaMap = {
-                    'Rusak': '#ef4444',         // Merah
-                    'Hilang': '#6b7280',        // Abu-abu
-                    'Kadaluarsa': '#f59e0b',    // Kuning Amber
-                    'Selisih Opname': '#3b82f6' // Biru
+                    'Rusak': '#ef4444',
+                    'Hilang': '#6b7280',
+                    'Kadaluarsa': '#f59e0b',
+                    'Selisih Opname': '#3b82f6'
                 };
-
                 const warnaBackground = Object.keys(dataJenis).map(jenis => warnaMap[jenis] || '#10b981');
-
                 new Chart(ctxJenis, {
                     type: 'doughnut',
                     data: {
@@ -210,32 +210,32 @@
                             hoverOffset: 4
                         }]
                     },
-                    options: { 
-                        responsive: true, 
+                    options: {
+                        responsive: true,
                         maintainAspectRatio: false,
                         plugins: {
-                            legend: { position: 'right', labels: { boxWidth: 12, font: { size: 10, family: 'sans-serif' } } }
+                            legend: { position: 'right', labels: { boxWidth: 12, font: { size: 10 } } }
                         },
                         cutout: '70%'
                     }
                 });
             }
 
-            // 2. Inisialisasi Chart Garis (Tren)
-            if(Object.keys(dataTren).length > 0) {
-                const ctxTren = document.getElementById('chartTren');
+            // 2. Grafik Garis (Tren)
+            if (Object.keys(dataTren).length > 0 && document.getElementById('chartTren')) {
+                const ctxTren = document.getElementById('chartTren').getContext('2d');
                 new Chart(ctxTren, {
                     type: 'line',
                     data: {
-                        labels: Object.keys(dataTren), // Menampilkan Tanggal
+                        labels: Object.keys(dataTren),
                         datasets: [{
                             label: 'Jumlah Kasus Masuk',
                             data: Object.values(dataTren),
-                            borderColor: '#6366f1', // Warna Indigo Tailwind
+                            borderColor: '#6366f1',
                             backgroundColor: 'rgba(99, 102, 241, 0.1)',
                             borderWidth: 3,
                             fill: true,
-                            tension: 0.3, // Efek curve melengkung
+                            tension: 0.3,
                             pointBackgroundColor: '#ffffff',
                             pointBorderColor: '#6366f1',
                             pointBorderWidth: 2,
@@ -243,8 +243,8 @@
                             pointHoverRadius: 6
                         }]
                     },
-                    options: { 
-                        responsive: true, 
+                    options: {
+                        responsive: true,
                         maintainAspectRatio: false,
                         plugins: {
                             legend: { display: false },
@@ -257,6 +257,17 @@
                     }
                 });
             }
-        });
+        }
+
+        // Inisialisasi saat pertama kali
+        document.addEventListener('livewire:initialized', initCharts);
+        // Inisialisasi ulang setelah navigasi SPA
+        document.addEventListener('livewire:navigated', initCharts);
+        // Inisialisasi ulang setiap kali Livewire selesai mengubah DOM (karena polling)
+        if (typeof Livewire !== 'undefined') {
+            Livewire.hook('morph.updated', () => {
+                setTimeout(initCharts, 50);
+            });
+        }
     </script>
 </div>
